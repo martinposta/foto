@@ -123,13 +123,13 @@ Cíl: z veřejného repa zmizí osobní e-mail (D23). Zároveň se zahodí histo
 - [x] V repu nastavit `git config user.name "Martin Porter"` a `git config user.email <noreply>` (Q8). Stačí lokálně pro toto repo, globální nastavení je volba uživatele.
 - [x] Projít aktuální strom (`data/`, `docs/`, README, CLAUDE.md, PLAN.md, `tests/`), jestli v něm osobní e-mail není i jinde. Nález nahradit, ne jen zapsat.
 - [x] **Záloha** celé složky včetně `.git`, kopie mimo repo. Cestu zapsat do Logu.
-- [ ] **Nová historie, nevratné, před provedením výslovně potvrdit s uživatelem.** Force-push osiřelé větve nestačí: staré commity by na GitHubu zůstaly dohledatelné přes SHA. Jistá cesta je repo smazat a založit znovu:
+- [x] **Nová historie, nevratné, před provedením výslovně potvrdit s uživatelem.** Force-push osiřelé větve nestačí: staré commity by na GitHubu zůstaly dohledatelné přes SHA. Jistá cesta je repo smazat a založit znovu:
   1. lokálně nová historie (`rm -rf .git`, `git init -b main`, `git remote add origin https://github.com/martinposta/foto.git`, jeden commit s aktuálním stavem). Obsah `21ec086` a všechny nepublikované změny se do něj dostanou samy, jde o stav souborů.
   2. **uživatel na GitHubu:** zapnout *Keep my email addresses private* a *Block command line pushes that expose my email*,
   3. **uživatel** smaže `martinposta/foto` a založí znovu prázdné veřejné repo `foto` (bez README),
   4. `git push -u origin main`. Přihlášení přes `gh` zůstává, nic se nemění.
   5. Settings → Pages: `main` + `/docs`, custom domain `foto.martinposta.com` (soubor `docs/CNAME` už existuje), po vydání certifikátu *Enforce HTTPS*. Počítat s krátkým výpadkem (minuty až hodina), Cloudflare DNS i statistika se nemění.
-- [ ] Ověřit: `git log --format='%an <%ae>' | sort -u` ukazuje jen `Martin Porter <…noreply…>`, web běží na doméně s HTTPS, fungují OG náhledy, přesměrování (D21) i statistika, ukazatel velikosti ukazuje nový stav (očekávaně kolem 70 MB).
+- [x] Ověřit: `git log --format='%an <%ae>' | sort -u` ukazuje jen `Martin Porter <…noreply…>`, web běží na doméně s HTTPS, fungují OG náhledy, přesměrování (D21) i statistika, ukazatel velikosti ukazuje nový stav (očekávaně kolem 70 MB).
 - Poznámka: SHA commitů v Logu (např. `fac6c78`, `f3daa45`, `21ec086`) po resetu přestanou existovat. Nechat je v Logu jako historický záznam.
 
 ### Fáze 5b: Kontaktní e-mail přes alias (D26, Q12)
@@ -363,3 +363,5 @@ Formát: `YYYY-MM-DD — kdo — co`
 - 2026-09-27 — uživatel — Šipky, tažení a kolečko v řádku štítků ověřeny, fungují. Pokračovat fází 5.
 - 2026-09-27 — Claude Code (Mac) — Fáze 5, kroky 1–3: noreply `33331553+martinposta@users.noreply.github.com` (odvozeno přes `gh api user`, id + login), `git config` jen pro toto repo: `Martin Porter <…noreply…>` (globální nastavení beze změny). Strom bez osobního e-mailu (`git grep`). **Záloha:** `/Users/martin/Desktop/Martin/Fotogalerie-zaloha-2026-09-27` (217 MB, celá složka včetně `.git` s 22 commity, `git fsck` OK). Poslední commit se starou historií: `9c17a70` (publikováno uživatelem 18:17, na GitHubu).
 - 2026-09-27 — Claude Code (Mac) — Fáze 5, krok 4 (potvrzeno uživatelem): `.git` smazán, nová historie s jedním commitem, autor i committer `Martin Porter <33331553+martinposta@users.noreply.github.com>`. Strom je shodný se starým `9c17a70` kromě `PLAN.md`. Nic zatím neodesláno. Admin zastaven do založení nového repa (publikování do starého repa by GitHub odmítl, historie nenavazuje).
+- 2026-09-27 — uživatel — GitHub: soukromí e-mailu a blokování pushů zapnuto, staré repo `foto` smazáno, nové prázdné veřejné založeno (20:06 UTC), Pages `main` + `/docs`, doména, Enforce HTTPS.
+- 2026-09-27 — Claude Code (Mac) — **Fáze 5 hotová.** Push nové historie prošel přes blokování (autor jen `Martin Porter <33331553+martinposta@users.noreply.github.com>`). Staré commity (`9c17a70`, `21ec086`, `f3daa45`) na GitHubu nedohledatelné (API 422). Pages: built, cert approved, HTTPS vynuceno, HTTP i `martinposta.github.io/foto/` → 301 na doménu. Živý web 70 fotek / 14 kolekcí / 8 skupin = lokální stav, fotka, kolekce, skupina, `og.jpg` 200, 404 OK, OG tagy s doménou, Cloudflare beacon s tokenem. Ukazatel velikosti ~67 MB (celá historie = současný obsah). Admin znovu běží. Další: fáze 5b.
