@@ -112,9 +112,9 @@
       <div class="profile-text">
         <h1>${esc(s.name)}</h1>
         ${s.bio ? `<p class="bio">${esc(s.bio)}</p>` : ''}
-        ${s.links.length || s.contact ? `<ul class="links">${s.links.map(l =>
-          `<li><a href="${esc(l.url)}" rel="noopener">${LINK_ICON}${esc(l.label || l.url.replace(/^https?:\/\/(www\.)?/, ''))}</a></li>`).join('')}${
-          s.contact ? `<li><a data-mail rel="nofollow">${MAIL_ICON}Email</a></li>` : ''}</ul>` : ''}
+        ${s.links.length || s.contact ? `<ul class="links">${
+          s.contact ? `<li><a data-mail rel="nofollow">${MAIL_ICON}Email</a></li>` : ''}${s.links.map(l =>
+          `<li><a href="${esc(l.url)}" rel="noopener">${LINK_ICON}${esc(l.label || l.url.replace(/^https?:\/\/(www\.)?/, ''))}</a></li>`).join('')}</ul>` : ''}
       </div>`;
     // Contact (D26): the address exists whole only here, in the live page, never in a file.
     const mail = els.profile.querySelector('[data-mail]');
