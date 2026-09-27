@@ -1,0 +1,8 @@
+* text=auto
+# Windows launcher must keep CRLF, the macOS one LF (bash chokes on \r).
+*.cmd     text eol=crlf
+*.command text eol=lf
+*.sh      text eol=lf
+*.webp binary
+*.jpg  binary
+*.png  binary
