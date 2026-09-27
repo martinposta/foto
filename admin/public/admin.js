@@ -175,21 +175,27 @@
     $('n-none').textContent = all.filter(p => !p.collections.length).length;
     $('n-drafts').textContent = draftCount() || '';
     renderConfirm();
-    // Same order as the site: starred, then a small heading per group, then ungrouped.
-    let heading = null;
-    $('coll-list').innerHTML = S.data.collections.map(c => {
+    const item = c => {
       const inC = all.filter(p => p.collections.includes(c.id));
       const pub = inC.filter(p => !p.draft).length, dr = inC.length - pub;
       // A collection with nothing published is itself a draft (Q13): not on the site, not in git.
       const n = `${pub}${dr ? ` <i class="n-draft" title="${dr} v konceptech">+${dr}</i>` : ''}`;
       const isDraft = !pub;
-      const h = c.starred ? '' : (c.group || (groupNames().length ? 'Bez skupiny' : ''));
-      const head = h !== heading && h
-        ? (c.group ? `<button class="side-group" data-group="${esc(h)}" title="Přejmenovat skupinu">${esc(h)}<span class="edit">✎</span></button>` : `<div class="side-group">${esc(h)}</div>`)
-        : '';
-      heading = h;
-      return head + `<button class="side-item${isDraft ? ' is-draft' : ''}" data-filter="${c.id}"${isDraft ? ' title="Na webu se ukáže až se zveřejněním první fotky"' : ''}>${c.starred ? '<span class="star" title="Zvýrazněná">★</span>' : ''}${esc(c.title)}<span class="n">${n}</span></button>`;
-    }).join('') || '<div class="help" style="padding:4px 10px">Zatím žádné kolekce.</div>';
+      return `<button class="side-item${isDraft ? ' is-draft' : ''}" data-filter="${c.id}"${isDraft ? ' title="Na webu se ukáže až se zveřejněním první fotky"' : ''}>${c.starred ? '<span class="star" title="Zvýrazněná">★</span>' : ''}${esc(c.title)}<span class="n">${n}</span></button>`;
+    };
+    // Starred ones on top (as on the site), then every group with ALL its collections, starred
+    // included: a group whose only collection is starred used to lose its heading here, and with
+    // it the only way to rename it. A starred collection therefore shows twice; both open it.
+    const colls = S.data.collections, groups = groupNames();
+    const starred = colls.filter(c => c.starred);
+    const html = (starred.length ? `<div class="side-group">Zvýrazněné</div>${starred.map(item).join('')}` : '')
+      + groups.map(g => `<button class="side-group" data-group="${esc(g)}" title="Přejmenovat skupinu">${esc(g)}<span class="edit">✎</span></button>`
+        + colls.filter(c => c.group === g).sort((a, b) => cs(a.title, b.title)).map(item).join('')).join('')
+      + (() => {
+        const rest = colls.filter(c => !c.group && !c.starred);
+        return rest.length ? (groups.length || starred.length ? '<div class="side-group">Bez skupiny</div>' : '') + rest.map(item).join('') : '';
+      })();
+    $('coll-list').innerHTML = html || '<div class="help" style="padding:4px 10px">Zatím žádné kolekce.</div>';
     document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.filter === S.filter));
   }
 
