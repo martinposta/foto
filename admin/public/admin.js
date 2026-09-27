@@ -64,7 +64,7 @@
     || cs(a.title, b.title)); // mirror of store.mjs collectionOrder
   const groupNames = () => [...new Set(S.data.collections.map(c => c.group).filter(Boolean))].sort(cs);
   const photoById = id => S.data.photos.find(p => p.id === id);
-  const thumbUrl = (p, w = 480) => `/preview/img/${p.id}/${p.widths.find(x => x >= w) || p.widths[p.widths.length - 1]}.${p.format}?v=${p.version || 1}`;
+  const thumbUrl = (p, w = 480) => `/${p.draft ? 'drafts-img' : 'preview/img'}/${p.id}/${p.widths.find(x => x >= w) || p.widths[p.widths.length - 1]}.${p.format}?v=${p.version || 1}`;
 
   // Mirror of lib/order.mjs orderedPhotos(): automatic until a list has a stored order; photos
   // missing from a stored order (new uploads, newly added to the collection) come first.
@@ -78,20 +78,28 @@
     return [...auto.filter(p => !listed.has(p.id)), ...stored.filter(id => byId.has(id)).map(id => byId.get(id))];
   }
 
+  // Published photos in their order; drafts (D24) have no place in an order until published.
   function sortedPhotos() {
-    return orderedPhotos(photos(), S.data.settings.order);
+    return orderedPhotos(photos().filter(p => !p.draft), S.data.settings.order);
   }
+  const drafts = () => photos().filter(p => p.draft).sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''));
+  const draftCount = () => photos().filter(p => p.draft).length;
 
+  // Every view shows its drafts first (newest upload first, Q14), then the published photos.
   function visiblePhotos() {
-    if (S.filter === 'all' || S.filter === 'settings') return sortedPhotos();
-    if (S.filter === 'none') return sortedPhotos().filter(p => !p.collections.length);
+    if (S.filter === 'drafts') return drafts();
+    if (S.filter === 'all' || S.filter === 'settings') return [...drafts(), ...sortedPhotos()];
+    if (S.filter === 'none') return [...drafts(), ...sortedPhotos()].filter(p => !p.collections.length);
     const c = collById(S.filter);
-    return c ? orderedPhotos(photos().filter(p => p.collections.includes(c.id)), c.order) : [];
+    if (!c) return [];
+    const inC = p => p.collections.includes(c.id);
+    return [...drafts().filter(inC), ...orderedPhotos(photos().filter(p => !p.draft && inC(p)), c.order)];
   }
 
   // The list whose order the current view shows: 'all', a collection id, or null ("Bez kolekce"
   // is just a filter and has no order of its own).
   function orderList() {
+    if (S.filter === 'drafts') return null;
     if (S.filter === 'all' || S.filter === 'settings') return 'all';
     return collById(S.filter) ? S.filter : null;
   }
@@ -165,16 +173,22 @@
     const all = photos();
     $('n-all').textContent = all.length;
     $('n-none').textContent = all.filter(p => !p.collections.length).length;
+    $('n-drafts').textContent = draftCount() || '';
+    renderConfirm();
     // Same order as the site: starred, then a small heading per group, then ungrouped.
     let heading = null;
     $('coll-list').innerHTML = S.data.collections.map(c => {
-      const n = all.filter(p => p.collections.includes(c.id)).length;
+      const inC = all.filter(p => p.collections.includes(c.id));
+      const pub = inC.filter(p => !p.draft).length, dr = inC.length - pub;
+      // A collection with nothing published is itself a draft (Q13): not on the site, not in git.
+      const n = `${pub}${dr ? ` <i class="n-draft" title="${dr} v konceptech">+${dr}</i>` : ''}`;
+      const isDraft = !pub;
       const h = c.starred ? '' : (c.group || (groupNames().length ? 'Bez skupiny' : ''));
       const head = h !== heading && h
         ? (c.group ? `<button class="side-group" data-group="${esc(h)}" title="Přejmenovat skupinu">${esc(h)}<span class="edit">✎</span></button>` : `<div class="side-group">${esc(h)}</div>`)
         : '';
       heading = h;
-      return head + `<button class="side-item" data-filter="${c.id}">${c.starred ? '<span class="star" title="Zvýrazněná">★</span>' : ''}${esc(c.title)}<span class="n">${n}</span></button>`;
+      return head + `<button class="side-item${isDraft ? ' is-draft' : ''}" data-filter="${c.id}"${isDraft ? ' title="Na webu se ukáže až se zveřejněním první fotky"' : ''}>${c.starred ? '<span class="star" title="Zvýrazněná">★</span>' : ''}${esc(c.title)}<span class="n">${n}</span></button>`;
     }).join('') || '<div class="help" style="padding:4px 10px">Zatím žádné kolekce.</div>';
     document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.filter === S.filter));
   }
@@ -182,7 +196,7 @@
   function renderMain() {
     const list = visiblePhotos();
     const coll = collById(S.filter);
-    $('view-title').textContent = S.filter === 'none' ? 'Fotky bez kolekce'
+    $('view-title').textContent = S.filter === 'drafts' ? 'Koncepty' : S.filter === 'none' ? 'Fotky bez kolekce'
       : coll ? coll.title : 'Všechny fotky';
     $('view-sub').textContent = photosLabel(list.length) + (S.selected.size ? ` · vybráno ${S.selected.size}` : '');
     const ol = orderList(), custom = ol && Array.isArray(storedOrder(ol));
@@ -193,15 +207,16 @@
     $('edit-collection').hidden = !coll;
     $('drop-hint').innerHTML = coll
       ? `Nahrané fotky se rovnou přidají do kolekce <b>${esc(coll.title)}</b>`
-      : 'JPG, PNG, WebP, TIFF · originály zůstávají u tebe, na web jde jen zmenšená verze';
+      : 'JPG, PNG, WebP, TIFF · nahrané fotky jsou nejdřív koncepty, na web jdou až po potvrzení';
 
     $('thumbs').innerHTML = list.map((p, i) => {
       const badges = [];
+      if (p.draft) badges.push('koncept');
       if (S.data.settings.coverPhotoId === p.id) badges.push('náhled webu');
       if (S.data.collections.some(c => c.coverId === p.id)) badges.push('obal');
-      return `<button class="thumb${S.selected.has(p.id) ? ' sel' : ''}" data-id="${p.id}" data-i="${i}" draggable="true" style="background:${p.color}">
+      return `<button class="thumb${S.selected.has(p.id) ? ' sel' : ''}${p.draft ? ' is-draft' : ''}" data-id="${p.id}" data-i="${i}" draggable="true" style="background:${p.color}">
         <img src="${thumbUrl(p, 300)}" alt="" loading="lazy">
-        ${badges.length ? `<div class="badges">${badges.map(b => `<span class="badge">${b}</span>`).join('')}</div>` : ''}
+        ${badges.length ? `<div class="badges">${badges.map(b => `<span class="badge${b === 'koncept' ? ' draft' : ''}">${b}</span>`).join('')}</div>` : ''}
         ${p.title ? `<div class="t">${esc(p.title)}</div>` : ''}
       </button>`;
     }).join('');
@@ -285,10 +300,14 @@
           <button class="btn small" id="f-newcoll-btn">Přidat</button></div>
       </div>
       ${exifRows.length ? `<div class="exif">${exifRows.map(r => `<div><span>${r[0]}</span><span>${esc(r[1])}</span></div>`).join('')}</div>` : ''}
-      ${orderControls(1)}
+      ${p.draft ? '' : orderControls(1)}
+      ${p.draft
+        ? `<div class="draft-box"><b>Koncept.</b> Na webu ani na GitHubu zatím není. <button class="btn small confirm" id="f-publish">Zveřejnit</button></div>`
+        : ''}
       <div class="row">
-        <button class="btn small" id="f-cover">${isCover ? '✓ Náhledová fotka webu' : 'Použít jako náhled webu'}</button>
+        ${p.draft ? '' : `<button class="btn small" id="f-cover">${isCover ? '✓ Náhledová fotka webu' : 'Použít jako náhled webu'}</button>
         <a class="btn small ghost" href="/preview/f/${p.id}/" target="gallery-preview">Na webu ↗</a>
+        <button class="btn small ghost" id="f-unpublish">Vrátit do konceptů</button>`}
         <label class="btn small">Nahradit soubor…<input type="file" id="f-replace" accept="image/jpeg,image/png,image/webp,image/tiff" hidden></label>
         <button class="btn small danger" id="f-delete">Smazat</button>
       </div>
@@ -335,7 +354,9 @@
     };
     $('f-newcoll-btn').addEventListener('click', addNew);
     $('f-newcoll').addEventListener('keydown', e => { if (e.key === 'Enter') addNew(); });
-    $('f-cover').addEventListener('click', async () => {
+    $('f-publish')?.addEventListener('click', () => confirmDrafts([p.id]));
+    $('f-unpublish')?.addEventListener('click', () => unpublish([p.id]));
+    $('f-cover')?.addEventListener('click', async () => {
       await saveSettingsNow({ coverPhotoId: isCover ? '' : p.id });
       renderMain(); renderPanel();
     });
@@ -421,7 +442,7 @@
       <div class="hint help" style="margin-top:6px">Ukládá se po kliknutí vedle nebo Enteru, pro všechny vybrané fotky. × pole u všech vymaže. Každou fotku pak můžeš upravit zvlášť.</div>
       </div>
       <hr class="sep">
-      ${orderControls(ids.length)}
+      ${sel.some(p => !p.draft) ? orderControls(ids.length) : ''}
       <div class="field"><label for="m-coll">Přidat do kolekce</label>
         <div class="row" style="margin-top:0"><select id="m-coll" style="flex:1">${opts || '<option value="">(žádné kolekce)</option>'}</select>
         <button class="btn small" id="m-add" ${opts ? '' : 'disabled'}>Přidat</button></div></div>
@@ -431,6 +452,10 @@
         <input type="text" id="m-new-group" list="m-groups" placeholder="Skupina (nepovinné), např. Czech Republic" style="margin-top:6px">
         <datalist id="m-groups">${groupNames().map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>
       <hr class="sep">
+      ${sel.some(p => p.draft) || sel.some(p => !p.draft) ? `<div class="row">
+        ${sel.some(p => p.draft) ? `<button class="btn small confirm" id="m-publish">Zveřejnit koncepty (${sel.filter(p => p.draft).length})</button>` : ''}
+        ${sel.some(p => !p.draft) ? `<button class="btn small ghost" id="m-unpublish">Vrátit do konceptů (${sel.filter(p => !p.draft).length})</button>` : ''}
+      </div>` : ''}
       <div class="row">
         ${coll ? `<button class="btn small" id="m-remove">Odebrat z kolekce „${esc(coll.title)}“</button>` : ''}
         <button class="btn small danger" id="m-delete">Smazat vybrané</button>
@@ -457,6 +482,8 @@
       saveField(k, '');
     });
     bindOrderControls(panel, ids);
+    $('m-publish')?.addEventListener('click', () => confirmDrafts(sel.filter(p => p.draft).map(p => p.id)));
+    $('m-unpublish')?.addEventListener('click', () => unpublish(sel.filter(p => !p.draft).map(p => p.id)));
     $('m-add').addEventListener('click', () => bulk({ ids, addCollection: $('m-coll').value }, 'Přidáno do kolekce'));
     const createAndAdd = async () => {
       const title = $('m-new').value.trim();
@@ -784,11 +811,13 @@
   $('thumbs').addEventListener('drop', e => {
     if (!dropMark) return;
     e.preventDefault();
-    const ids = JSON.parse(e.dataTransfer.getData('application/x-photo-ids') || '[]');
+    const ids = JSON.parse(e.dataTransfer.getData('application/x-photo-ids') || '[]').filter(id => !photoById(id)?.draft);
     const { el, after } = dropMark;
     clearMark();
+    if (!ids.length) { toast('Koncepty se řadí až po zveřejnění'); return; }
     let target = after ? el.nextElementSibling : el;
-    while (target && ids.includes(target.dataset.id)) target = target.nextElementSibling; // dropping next to itself
+    // Next to itself, or onto the drafts at the top (they have no place in the order yet).
+    while (target && (ids.includes(target.dataset.id) || photoById(target.dataset.id)?.draft)) target = target.nextElementSibling;
     changeOrder('move', ids, target?.dataset.id || null);
   });
   $('thumbs').addEventListener('dragend', clearMark);
@@ -926,19 +955,18 @@
       modal('Složka zatím není propojená s GitHubem', `<p class="help">Postup je v README ve fázi 2 (git init, remote, první push). Pak stačí klikat tady.</p>${g.error ? `<div class="log">${esc(g.error)}</div>` : ''}`, [['OK', 'primary']]);
       return;
     }
-    modal('Publikovat na GitHub', `
-      <div class="field"><label for="p-msg">Popis změny (nepovinné)</label><input type="text" id="p-msg" placeholder="např. Nové fotky ze Šumavy"></div>
-      ${warn}<div id="p-log"></div>`,
-      [['Zavřít', 'ghost'], ['Publikovat', 'primary', async () => {
-        const btn = $('modal-actions').lastChild;
+    const nd = draftCount();
+    const run = confirmFirst => async () => {
+        const btn = document.activeElement?.closest('#modal-actions button') || $('modal-actions').lastChild; // the one clicked
         btn.textContent = 'Publikuji…';
         $('publish-btn').disabled = true;
         try {
+          if (confirmFirst) await confirmDrafts(null, { quiet: true });
           const r = await api('POST', '/api/publish', { message: $('p-msg').value });
           S.git = r.status;
           renderGit();
           $('p-log').innerHTML = `<p><b>Hotovo.</b> Web se na GitHubu aktualizuje zhruba do minuty.</p><div class="log">${esc(r.log)}</div>`;
-          btn.remove();
+          [...$('modal-actions').children].slice(1).forEach(b => b.remove()); // only "Zavřít" stays
         } catch (e) {
           $('p-log').innerHTML = `<p style="color:var(--danger)"><b>Publikování selhalo.</b></p><div class="log">${esc(e.message)}</div>`;
           btn.textContent = 'Zkusit znovu';
@@ -946,8 +974,49 @@
           $('publish-btn').disabled = false;
         }
         return 'keep';
-      }]]);
+      };
+    modal('Publikovat na GitHub', `
+      <div class="field"><label for="p-msg">Popis změny (nepovinné)</label><input type="text" id="p-msg" placeholder="např. Nové fotky ze Šumavy"></div>
+      ${nd ? `<p class="help">Máš <b>${photosLabel(nd)} v konceptech</b>. Ty se bez potvrzení na GitHub nepošlou.</p>` : ''}
+      ${warn}<div id="p-log"></div>`,
+      nd ? [['Zavřít', 'ghost'], ['Publikovat bez konceptů', '', run(false)], [`Potvrdit ${photosLabel(nd)} a publikovat`, 'primary', run(true)]]
+         : [['Zavřít', 'ghost'], ['Publikovat', 'primary', run(false)]]);
   });
+
+  // ---------- drafts ----------
+
+  function renderConfirm() {
+    const n = draftCount();
+    $('confirm-btn').hidden = !n;
+    $('n-confirm').textContent = n;
+  }
+  $('confirm-btn').addEventListener('click', () => confirmDrafts(null));
+
+  // Publish drafts (all when ids is null). Files move into docs/; GitHub gets them with Publikovat.
+  async function confirmDrafts(ids, { quiet = false } = {}) {
+    saving(true);
+    try {
+      const r = await api('POST', '/api/drafts/publish', ids ? { ids } : {});
+      for (const u of r.photos) { const p = photoById(u.id); if (p) { Object.assign(p, u); delete p.draft; } }
+      if (!quiet) toast(`Zveřejněno: ${photosLabel(r.published)}. Na GitHub je pošle Publikovat.`);
+      renderAll(); refreshGitSoon();
+    } catch (e) { fail(e); if (quiet) throw e; }
+    finally { saving(false); }
+  }
+
+  function unpublish(ids) {
+    modal(`Vrátit ${photosLabel(ids.length)} do konceptů?`,
+      '<p>Zmizí z webu a z příštího publikování. <b>Verze, která už na GitHubu je, ale zůstane v historii gitu</b> a kdo ví kde hledat, ji najde.</p>',
+      [['Zrušit', 'ghost'], ['Vrátit do konceptů', 'primary', async () => {
+        try {
+          const r = await api('POST', '/api/photos/unpublish', { ids });
+          for (const u of r.photos) Object.assign(photoById(u.id) || {}, u, { draft: true });
+          for (const c of S.data.collections) if (Array.isArray(c.order)) c.order = c.order.filter(id => !ids.includes(id));
+          if (Array.isArray(S.data.settings.order)) S.data.settings.order = S.data.settings.order.filter(id => !ids.includes(id));
+          toast('Vráceno do konceptů'); renderAll(); refreshGitSoon();
+        } catch (e) { fail(e); }
+      }]]);
+  }
 
   // ---------- boot ----------
 

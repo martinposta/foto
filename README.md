@@ -101,7 +101,7 @@ Pokud je portfolio v repu s jiným názvem, tohle nefunguje. Pak použij variant
 ## Každodenní použití
 
 1. `Galerie.command` na Macu, `Galerie.cmd` na Windows (nebo `npm run admin`)
-2. Přetáhni fotky do pole nahoře. Když máš vlevo vybranou kolekci, fotky se do ní rovnou přidají.
+2. Přetáhni fotky do pole nahoře. Když máš vlevo vybranou kolekci, fotky se do ní rovnou přidají. **Nové fotky jsou nejdřív koncepty** (štítek *koncept*, jsou v mřížce nahoře a v levém panelu pod *Koncepty*). Na webu ani na GitHubu nejsou, dokud je nepotvrdíš: tlačítkem **Potvrdit nové fotky** nahoře, **Zveřejnit** u fotky, nebo rovnou při *Publikovat* volbou **Potvrdit a publikovat**. Kolekce, ve které jsou jen koncepty, je taky skrytá (v levém panelu kurzívou). Zveřejněnou fotku jde *Vrátit do konceptů*, ale verze, která už na GitHubu byla, zůstane v historii gitu. Koncepty nejsou zálohované na GitHubu.
 3. Klikni na fotku a doplň název, popis, místo a kolekce. Ukládá se samo.
    - **Cmd/Ctrl/Shift + klik** vybere víc fotek naráz. Hromadně jim pak vyplníš název, popis, místo a datum pořízení, přidáš je do kolekce nebo je smažeš, případně je přetáhneš na kolekci vlevo. Pole se uloží všem vybraným fotkám, jakmile klikneš vedle nebo zmáčkneš Enter. Smazaný text pole u všech vymaže, stejně jako **×**. Volba *Jen u fotek, kde je pole prázdné* nepřepíše, co už máš vyplněné.
    - **★** u kolekce v editoru fotky nastaví obal kolekce.

@@ -91,12 +91,19 @@ async function gitStatus() {
   return {
     repo: true,
     size: await repoSize(st.out),
-    changes: st.out ? st.out.split('\n').length : 0,
+    changes: st.out ? st.out.split('\n').filter(l => !isPrivate(l.slice(3))).length : 0,
     remote: remote.code === 0 ? remote.out : '',
     upstream: upstream.code === 0 ? upstream.out : '',
     ahead,
   };
 }
+
+// Drafts must never reach git (D24). .gitignore keeps them out, but publishing does not rely on
+// it alone: they are excluded from staging explicitly, untracked if something ever added them, and
+// a last check stops the publish before a commit exists if one is still staged. (The tests run in
+// a repo without the project's .gitignore, which is how the gap showed.)
+const PRIVATE_PATHS = ['drafts', 'data/drafts.json'];
+const isPrivate = f => PRIVATE_PATHS.some(p => f === p || f.startsWith(p + '/'));
 
 async function publish(message) {
   await buildNow();
@@ -106,7 +113,13 @@ async function publish(message) {
   if (!status.repo) throw new G.UserError('Složka není git repozitář. Postup je v README (fáze 2).');
   if (!status.remote) throw new G.UserError('Repozitář nemá nastavený remote "origin". Postup je v README (fáze 2).');
 
-  await run(['add', '-A']);
+  await run(['add', '-A', '--', '.', ...PRIVATE_PATHS.map(p => `:(exclude)${p}`)]);
+  await git(['rm', '-r', '--cached', '--ignore-unmatch', '--quiet', '--', ...PRIVATE_PATHS], { allowFail: true });
+  const leaked = (await git(['diff', '--cached', '--name-only', '--diff-filter=ACMR'])).out.split('\n').filter(isPrivate);
+  if (leaked.length) {
+    await git(['reset', '--quiet'], { allowFail: true });
+    throw new G.UserError(`Publikování zastaveno: do commitu by se dostal koncept (${leaked.slice(0, 3).join(', ')}). Nic se neodeslalo.`);
+  }
   const staged = await git(['diff', '--cached', '--quiet'], { allowFail: true });
   if (staged.code === 1) {
     const stamp = new Date().toLocaleString('cs-CZ', { dateStyle: 'short', timeStyle: 'short' });
@@ -198,6 +211,8 @@ async function api(req, res, url) {
   }
   else if (m === 'POST' && p === '/api/photos/rewrite-author') r = await G.rewriteAuthorInFiles();
   else if (m === 'POST' && p === '/api/order') r = await G.reorderPhotos(await readJson(req));
+  else if (m === 'POST' && p === '/api/drafts/publish') r = await G.publishDrafts(await readJson(req));
+  else if (m === 'POST' && p === '/api/photos/unpublish') r = await G.unpublishPhotos(await readJson(req));
   else if (m === 'POST' && p === '/api/groups/rename') r = await G.renameGroup(await readJson(req));
   else if (m === 'POST' && (r = p.match(/^\/api\/photos\/([\w-]+)\/replace$/))) {
     const id = r[1], name = uploadName();
@@ -228,6 +243,8 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
     if (url.pathname === '/preview') { res.writeHead(302, { Location: '/preview/' }); return res.end(); }
     if (url.pathname.startsWith('/preview/')) return await serveStatic(res, PATHS.docs, url.pathname.slice('/preview/'.length));
+    // Drafts' images for the admin's thumbnails; they are not in docs/, so /preview/ cannot serve them.
+    if (url.pathname.startsWith('/drafts-img/')) return await serveStatic(res, PATHS.draftImg, url.pathname.slice('/drafts-img/'.length));
     return await serveStatic(res, PATHS.adminPublic, url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
   } catch (err) {
     const user = err instanceof G.UserError;

@@ -37,6 +37,17 @@ async function api(method, p, body, raw) {
   return { status: res.status, json };
 }
 
+// Uploads land as drafts (D24). Most tests are about published photos, so this publishes the new
+// photo straight away; the drafts test calls the plain api() to see the draft itself.
+async function apiUpload(method, p, body, raw) {
+  const r = await api(method, p, body, raw);
+  if (r.status === 200 && r.json.photo?.draft) {
+    const pub = await api('POST', '/api/drafts/publish', { ids: [r.json.photo.id] });
+    r.json.photo = pub.json.photos[0];
+  }
+  return r;
+}
+
 // Wait for the debounced site build to run and finish.
 async function settle() { await sleep(450); await api('GET', '/api/git'); }
 
@@ -122,7 +133,7 @@ test('fresh start creates data file and an empty site', async () => {
 
 test('upload: metadata is read, derivatives are written, metadata is stripped', async () => {
   const buf = await makeJpeg({ w: 3000, h: 2000, color: '#3b5b8c', title: 'Šumava ráno', description: 'Mlha nad Vltavou.', noise: true });
-  const { status, json } = await api('POST', '/api/upload?name=DSCF0001.jpg', undefined, buf);
+  const { status, json } = await apiUpload('POST', '/api/upload?name=DSCF0001.jpg', undefined, buf);
   assert.equal(status, 200, JSON.stringify(json));
   photoA = json.photo;
   assert.equal(json.duplicate, false);
@@ -153,7 +164,7 @@ test('copyright: empty setting publishes files with no metadata at all', async (
   let r = await api('PATCH', '/api/settings', { copyright: '' });
   assert.equal(r.json.copyright, '');
   const buf = await makeJpeg({ w: 1200, h: 800, color: '#2a9d8f' });
-  const { json } = await api('POST', '/api/upload?name=nocopy.jpg', undefined, buf);
+  const { json } = await apiUpload('POST', '/api/upload?name=nocopy.jpg', undefined, buf);
   for (const f of [`${json.photo.widths.at(-1)}.${json.photo.format}`, 'og.jpg']) {
     const m = await sharp(docs('img', json.photo.id, f)).metadata();
     assert.equal(m.exif, undefined, `${f}: EXIF must be absent`);
@@ -166,7 +177,7 @@ test('copyright: empty setting publishes files with no metadata at all', async (
 
 test('upload: EXIF orientation is applied (portrait from rotated landscape)', async () => {
   const buf = await makeJpeg({ w: 3000, h: 2000, color: '#e76f51', orientation: 6 });
-  const { status, json } = await api('POST', '/api/upload?name=DSCF0002.jpg', undefined, buf);
+  const { status, json } = await apiUpload('POST', '/api/upload?name=DSCF0002.jpg', undefined, buf);
   assert.equal(status, 200);
   photoB = json.photo;
   assert.deepEqual([photoB.width, photoB.height], [2000, 3000]);
@@ -178,7 +189,7 @@ test('upload: EXIF orientation is applied (portrait from rotated landscape)', as
 
 test('upload: same file twice is detected as duplicate', async () => {
   const buf = await makeJpeg({ w: 3000, h: 2000, color: '#e76f51', orientation: 6 });
-  const { json } = await api('POST', '/api/upload?name=copy.jpg', undefined, buf);
+  const { json } = await apiUpload('POST', '/api/upload?name=copy.jpg', undefined, buf);
   assert.equal(json.duplicate, true);
   assert.equal(json.photo.id, photoB.id);
   const { json: st } = await api('GET', '/api/state');
@@ -186,7 +197,7 @@ test('upload: same file twice is detected as duplicate', async () => {
 });
 
 test('upload: unsupported format is rejected with a readable error', async () => {
-  const { status, json } = await api('POST', '/api/upload?name=IMG_0001.HEIC', undefined, Buffer.from('x'));
+  const { status, json } = await apiUpload('POST', '/api/upload?name=IMG_0001.HEIC', undefined, Buffer.from('x'));
   assert.equal(status, 400);
   assert.match(json.error, /Nepodporovaný formát/);
 });
@@ -303,7 +314,7 @@ test('widths: no near-duplicate step next to the largest width', () => {
 
 test('replace: new version keeps id, texts and collections; files, size and version change', async () => {
   const first = await makeJpeg({ w: 3000, h: 2000, color: '#264653', title: 'Původní název' });
-  const { json: up } = await api('POST', '/api/upload?name=DSCF0100.jpg', undefined, first);
+  const { json: up } = await apiUpload('POST', '/api/upload?name=DSCF0100.jpg', undefined, first);
   const id = up.photo.id;
   const { json: coll } = await api('POST', '/api/collections', { title: 'Nahrazení' });
   await api('PATCH', `/api/photos/${id}`, { title: 'Můj název', location: 'Kvilda', collections: [coll.id] });
@@ -337,14 +348,14 @@ test('replace: new version keeps id, texts and collections; files, size and vers
 
   // Uploading either version again is recognised as already in the gallery.
   for (const buf of [second, first]) {
-    const { json } = await api('POST', '/api/upload?name=again.jpg', undefined, buf);
+    const { json } = await apiUpload('POST', '/api/upload?name=again.jpg', undefined, buf);
     assert.equal(json.duplicate, true);
     assert.equal(json.photo.id, id);
   }
   // Same file again, another photo's file, unknown photo, wrong format: readable 400s.
   let r = await api('POST', `/api/photos/${id}/replace?name=x.jpg`, undefined, second);
   assert.equal(r.status, 400); assert.match(r.json.error, /stejný soubor/);
-  const { json: other } = await api('POST', '/api/upload?name=other.jpg', undefined, await makeJpeg({ w: 800, h: 600, color: '#f4a261' }));
+  const { json: other } = await apiUpload('POST', '/api/upload?name=other.jpg', undefined, await makeJpeg({ w: 800, h: 600, color: '#f4a261' }));
   r = await api('POST', `/api/photos/${id}/replace?name=x.jpg`, undefined, await makeJpeg({ w: 800, h: 600, color: '#f4a261' }));
   assert.equal(r.status, 400); assert.match(r.json.error, /jiná fotka/);
   r = await api('POST', '/api/photos/neexistuje/replace?name=x.jpg', undefined, second);
@@ -359,7 +370,7 @@ test('replace: new version keeps id, texts and collections; files, size and vers
 test('bulk: title, description and location for many photos; empty = unchanged; onlyEmpty fills gaps', async () => {
   const ids = [];
   for (const color of ['#101010', '#202020', '#303030']) {
-    const { json } = await api('POST', `/api/upload?name=${color.slice(1)}.jpg`, undefined, await makeJpeg({ w: 900, h: 600, color }));
+    const { json } = await apiUpload('POST', `/api/upload?name=${color.slice(1)}.jpg`, undefined, await makeJpeg({ w: 900, h: 600, color }));
     ids.push(json.photo.id);
   }
   await api('PATCH', `/api/photos/${ids[0]}`, { location: 'Kvilda', description: 'Vlastní popis' });
@@ -397,7 +408,7 @@ test('bulk: title, description and location for many photos; empty = unchanged; 
 });
 
 test('untitled photo: page title and link preview use the location, without repeating it', async () => {
-  const { json } = await api('POST', '/api/upload?name=untitled.jpg', undefined, await makeJpeg({ w: 900, h: 600, color: '#556b2f' }));
+  const { json } = await apiUpload('POST', '/api/upload?name=untitled.jpg', undefined, await makeJpeg({ w: 900, h: 600, color: '#556b2f' }));
   const id = json.photo.id;
   await api('PATCH', `/api/photos/${id}`, { location: 'Kvilda, Šumava' });
   await settle();
@@ -414,7 +425,7 @@ test('untitled photo: page title and link preview use the location, without repe
 });
 
 test('rewrite-author: new name/copyright reach existing files without re-encoding', async () => {
-  const { json } = await api('POST', '/api/upload?name=rewrite.jpg', undefined, await makeJpeg({ w: 1800, h: 1200, color: '#8d99ae', noise: true }));
+  const { json } = await apiUpload('POST', '/api/upload?name=rewrite.jpg', undefined, await makeJpeg({ w: 1800, h: 1200, color: '#8d99ae', noise: true }));
   const p = json.photo;
   const files = [...p.widths.map(w => `${w}.${p.format}`), 'og.jpg'];
   const pixels = async f => (await sharp(docs('img', p.id, f)).raw().toBuffer()).toString('base64');
@@ -439,7 +450,7 @@ test('rewrite-author: new name/copyright reach existing files without re-encodin
   await api('PATCH', '/api/settings', { copyright: '' });
   await api('POST', '/api/photos/rewrite-author', {});
   for (const f of files) assert.equal((await sharp(docs('img', p.id, f)).metadata()).exif, undefined, f);
-  const { json: bare } = await api('POST', '/api/upload?name=bare.jpg', undefined, await makeJpeg({ w: 700, h: 500, color: '#2b2d42' }));
+  const { json: bare } = await apiUpload('POST', '/api/upload?name=bare.jpg', undefined, await makeJpeg({ w: 700, h: 500, color: '#2b2d42' }));
   await api('PATCH', '/api/settings', { name: 'Martin Pošta', copyright: '© Martin Pošta' });
   await api('POST', '/api/photos/rewrite-author', {});
   for (const f of [`${bare.photo.widths.at(-1)}.${bare.photo.format}`, 'og.jpg', files[0]]) {
@@ -457,7 +468,7 @@ test('repo size: git history size plus what the next publish adds, against 1 GB'
   const stored0 = g.size.stored;
   assert.ok(stored0 > 0, 'test repo already has commits');
 
-  const { json } = await api('POST', '/api/upload?name=size.jpg', undefined, await makeJpeg({ w: 2000, h: 1400, color: '#6d597a', noise: true }));
+  const { json } = await apiUpload('POST', '/api/upload?name=size.jpg', undefined, await makeJpeg({ w: 2000, h: 1400, color: '#6d597a', noise: true }));
   await settle();
   ({ json: g } = await api('GET', '/api/git'));
   assert.ok(g.size.pending >= json.photo.bytes * 0.9, `pending ${g.size.pending} covers the new files (${json.photo.bytes})`);
@@ -500,7 +511,7 @@ test('order (API): each list keeps its own order, newcomers first, reset, site d
   for (const [i, date] of ['2022:03:01', '2023:03:01', '2024:03:01'].entries()) {
     let img = sharp({ create: { width: 600, height: 400, channels: 3, background: ['#111', '#222', '#333'][i] } })
       .withExif({ IFD2: { DateTimeOriginal: `${date} 12:00:00` } });
-    const { json } = await api('POST', `/api/upload?name=o${i}.jpg`, undefined, await img.jpeg().toBuffer());
+    const { json } = await apiUpload('POST', `/api/upload?name=o${i}.jpg`, undefined, await img.jpeg().toBuffer());
     made.push(json.photo.id);
   }
   const [y22, y23, y24] = made;
@@ -524,7 +535,7 @@ test('order (API): each list keeps its own order, newcomers first, reset, site d
   assert.deepEqual(st.data.collections.find(c => c.id === coll.id).order, [y22, y24, y23], 'collection keeps its own');
 
   // A newcomer shows up first in both custom lists.
-  const { json: fresh } = await api('POST', `/api/upload?name=new.jpg&collection=${coll.id}`, undefined, await makeJpeg({ w: 600, h: 400, color: '#444' }));
+  const { json: fresh } = await apiUpload('POST', `/api/upload?name=new.jpg&collection=${coll.id}`, undefined, await makeJpeg({ w: 600, h: 400, color: '#444' }));
   await settle();
   const pub = JSON.parse(await fs.readFile(docs('data.json'), 'utf8'));
   assert.equal(pub.photos[0].id, fresh.photo.id, 'new photo first on the main page');
@@ -555,7 +566,7 @@ test('collections: always alphabetical (Czech collation, numbers by value), also
   const titles = ['Šumava', 'alpy', 'Česko', 'Cesta 10', 'Cesta 9', 'Hory'];
   const made = [];
   for (const title of titles) made.push((await api('POST', '/api/collections', { title })).json);
-  const { json: photo } = await api('POST', '/api/upload?name=abc.jpg', undefined, await makeJpeg({ w: 600, h: 400, color: '#777' }));
+  const { json: photo } = await apiUpload('POST', '/api/upload?name=abc.jpg', undefined, await makeJpeg({ w: 600, h: 400, color: '#777' }));
   await api('PATCH', `/api/photos/${photo.photo.id}`, { collections: made.map(c => c.id).reverse() });
   const mine = list => list.filter(t => titles.includes(t) || t === 'Zlín');
   let { json: st } = await api('GET', '/api/state');
@@ -578,7 +589,7 @@ test('collections: starred ones first (alphabetical among themselves), flag reac
   const titles = ['Alpy', 'Brno', 'Výlet 2026', 'Oblíbené', 'Česko'];
   const made = {};
   for (const title of titles) made[title] = (await api('POST', '/api/collections', { title })).json;
-  const { json: ph } = await api('POST', '/api/upload?name=star.jpg', undefined, await makeJpeg({ w: 600, h: 400, color: '#999' }));
+  const { json: ph } = await apiUpload('POST', '/api/upload?name=star.jpg', undefined, await makeJpeg({ w: 600, h: 400, color: '#999' }));
   await api('PATCH', `/api/photos/${ph.photo.id}`, { collections: Object.values(made).map(c => c.id) });
   const mine = list => list.map(c => c.title).filter(t => titles.includes(t));
 
@@ -606,7 +617,7 @@ test('collections: starred ones first (alphabetical among themselves), flag reac
 test('bulk: date taken for many photos (validated, seconds added, clearable)', async () => {
   const ids = [];
   for (const color of ['#123456', '#654321']) {
-    const { json } = await api('POST', `/api/upload?name=d${color.slice(1)}.jpg`, undefined, await makeJpeg({ w: 600, h: 400, color }));
+    const { json } = await apiUpload('POST', `/api/upload?name=d${color.slice(1)}.jpg`, undefined, await makeJpeg({ w: 600, h: 400, color }));
     ids.push(json.photo.id);
   }
   let r = await api('POST', '/api/photos/bulk', { ids, set: { takenAt: '2022-05-01T10:30' } });
@@ -622,7 +633,7 @@ test('bulk: date taken for many photos (validated, seconds added, clearable)', a
 
 test('public site is English and lives under collections/', async () => {
   const { json: c } = await api('POST', '/api/collections', { title: 'Hory' });
-  const { json: ph } = await api('POST', `/api/upload?name=en.jpg&collection=${c.id}`, undefined, await makeJpeg({ w: 600, h: 400, color: '#335' }));
+  const { json: ph } = await apiUpload('POST', `/api/upload?name=en.jpg&collection=${c.id}`, undefined, await makeJpeg({ w: 600, h: 400, color: '#335' }));
   await settle();
   const page = await fs.readFile(docs('collections', c.slug, 'index.html'), 'utf8');
   assert.match(page, /<html lang="en">/);
@@ -666,7 +677,7 @@ test('groups: collections sort by group, starred stay on top, group pages list a
   await api('PATCH', `/api/collections/${sz.id}`, { group: '  Czech   Republic ' });
   await api('PATCH', `/api/collections/${nt.id}`, { group: 'Slovakia' });
   const up = async (color, colls) => {
-    const { json } = await api('POST', `/api/upload?name=g${color.slice(1)}.jpg`, undefined, await makeJpeg({ w: 600, h: 400, color }));
+    const { json } = await apiUpload('POST', `/api/upload?name=g${color.slice(1)}.jpg`, undefined, await makeJpeg({ w: 600, h: 400, color }));
     await api('PATCH', `/api/photos/${json.photo.id}`, { collections: colls });
     return json.photo.id;
   };
@@ -716,7 +727,7 @@ test('collections: can be created straight into a group', async () => {
 test('redirects: renamed group and changed collection address keep old links working', async () => {
   const { json: a } = await api('POST', '/api/collections', { title: 'Zlatá řeka', group: 'Czech Rep' });
   const { json: b } = await api('POST', '/api/collections', { title: 'Sázava', group: 'Czech Rep' });
-  const { json: ph } = await api('POST', `/api/upload?name=rd.jpg&collection=${a.id}`, undefined, await makeJpeg({ w: 600, h: 400, color: '#468' }));
+  const { json: ph } = await apiUpload('POST', `/api/upload?name=rd.jpg&collection=${a.id}`, undefined, await makeJpeg({ w: 600, h: 400, color: '#468' }));
   await api('PATCH', `/api/photos/${ph.photo.id}`, { collections: [a.id, b.id] });
 
   // Rename the group (a typo fix): every member moves, the old page redirects.
@@ -787,4 +798,71 @@ test('contact e-mail: stored split, never whole in any file, joined only in the 
   assert.equal(r.status, 400);
   r = await api('PATCH', '/api/settings', { contactEmail: '' });
   assert.equal(r.json.contact, null);
+});
+
+test('drafts: never in git or on the site until published; publish, take back, replace, delete', async () => {
+  const draftFile = (...p) => path.join(dataRoot, 'drafts', 'img', ...p);
+  const galleryJson = () => fs.readFile(path.join(dataRoot, 'data', 'gallery.json'), 'utf8');
+  // A published photo with a custom order, so we can see where a newly published draft lands.
+  const { json: old } = await apiUpload('POST', '/api/upload?name=old.jpg', undefined, await makeJpeg({ w: 800, h: 600, color: '#101820' }));
+  await api('POST', '/api/order', { list: 'all', action: 'start', ids: [old.photo.id] });
+
+  // Upload = draft, into a collection that has nothing published yet (Q13: the collection is a draft too).
+  const { json: coll } = await api('POST', '/api/collections', { title: 'Norsko 2027', group: 'Norway' });
+  let r = await api('POST', `/api/upload?name=secret.jpg&collection=${coll.id}`, undefined, await makeJpeg({ w: 1200, h: 800, color: '#6a994e', title: 'Tajný výlet' }));
+  const d = r.json.photo;
+  assert.equal(d.draft, true);
+  assert.ok(existsSync(draftFile(d.id, `1200.${d.format}`)), 'draft files in drafts/img');
+  assert.ok(!existsSync(docs('img', d.id)), 'nothing in docs/');
+  await settle();
+  const secret = /Tajný výlet|Norsko 2027|Norway/;
+  assert.doesNotMatch(await galleryJson(), new RegExp(`${d.id}|${secret.source}`), 'no trace in gallery.json');
+  assert.doesNotMatch(await fs.readFile(docs('data.json'), 'utf8'), new RegExp(`${d.id}|${secret.source}`));
+  assert.ok(!existsSync(docs('collections', coll.slug)) && !existsSync(docs('groups', 'norway')));
+  assert.match(await fs.readFile(path.join(dataRoot, 'data', 'drafts.json'), 'utf8'), /Tajný výlet/);
+
+  // Publishing to GitHub while a draft exists: git gets nothing of it.
+  r = await api('POST', '/api/publish', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  const tracked = git(dataRoot, 'ls-files');
+  assert.doesNotMatch(tracked, new RegExp(`${d.id}|drafts`), 'no draft file is tracked');
+  assert.doesNotMatch(git(dataRoot, 'show', 'HEAD:data/gallery.json'), new RegExp(`${d.id}|${secret.source}`));
+  assert.doesNotMatch(git(dataRoot, 'log', '-p', '--all', '--', '.'), /Tajný výlet|Norsko 2027/, 'not in any commit');
+
+  // Orders and duplicates: a draft cannot be ordered, and re-uploading it is a duplicate.
+  r = await api('POST', '/api/order', { list: 'all', action: 'end', ids: [d.id] });
+  assert.equal(r.status, 400);
+  r = await api('POST', '/api/upload?name=again.jpg', undefined, await makeJpeg({ w: 1200, h: 800, color: '#6a994e', title: 'Tajný výlet' }));
+  assert.equal(r.json.duplicate, true);
+
+  // Replacing a draft keeps it a draft, files stay in drafts/.
+  r = await api('POST', `/api/photos/${d.id}/replace?name=secret-v2.jpg`, undefined, await makeJpeg({ w: 900, h: 1200, color: '#386641' }));
+  assert.equal(r.json.draft, true);
+  assert.ok(existsSync(draftFile(d.id, `900.${d.format}`)) && !existsSync(docs('img', d.id)));
+
+  // Confirm: files move to docs/, the collection and group appear, the photo lands first in the custom order.
+  r = await api('POST', '/api/drafts/publish', {});
+  assert.equal(r.json.published, 1);
+  assert.ok(!existsSync(draftFile(d.id)) && existsSync(docs('img', d.id, 'og.jpg')));
+  await settle();
+  let pub = JSON.parse(await fs.readFile(docs('data.json'), 'utf8'));
+  assert.equal(pub.photos[0].id, d.id, 'newly published first in the custom order');
+  assert.ok(pub.collections.some(c => c.slug === coll.slug) && pub.groups.some(g => g.slug === 'norway'));
+  assert.match(await galleryJson(), /Norsko 2027/);
+
+  // Take it back: gone from docs/ and the site again, back in drafts/.
+  r = await api('POST', '/api/photos/unpublish', { ids: [d.id] });
+  assert.equal(r.json.drafts, 1);
+  assert.ok(existsSync(draftFile(d.id, 'og.jpg')) && !existsSync(docs('img', d.id)));
+  await settle();
+  pub = JSON.parse(await fs.readFile(docs('data.json'), 'utf8'));
+  assert.ok(!pub.photos.some(p => p.id === d.id) && !pub.collections.some(c => c.slug === coll.slug));
+  const { json: st } = await api('GET', '/api/state');
+  assert.ok(!st.data.settings.order.includes(d.id), 'taken back = out of the custom order');
+
+  // Deleting a draft leaves no files anywhere.
+  await api('POST', '/api/photos/bulk', { ids: [d.id, old.photo.id], remove: true });
+  assert.ok(!existsSync(draftFile(d.id)) && !existsSync(docs('img', d.id)));
+  await api('DELETE', `/api/collections/${coll.id}`);
+  await api('POST', '/api/order', { list: 'all', action: 'reset' });
 });

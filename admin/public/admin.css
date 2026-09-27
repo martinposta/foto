@@ -193,3 +193,13 @@ button.side-group { cursor: pointer; }
 button.side-group:hover { background: var(--hover); color: var(--fg); }
 .side-group .edit { opacity: .5; font-weight: 400; }
 button.side-group:hover .edit { opacity: 1; }
+/* Drafts (D24): not on the site, not in git until confirmed. */
+.thumb.is-draft img { opacity: .78; }
+.thumb.is-draft { outline: 2px dashed var(--warn); outline-offset: -2px; }
+.thumb.is-draft.sel { outline: 3px solid var(--sel); outline-offset: -3px; }
+.badge.draft { background: var(--warn); }
+.side-item.is-draft { font-style: italic; color: var(--muted); }
+.n-draft { font-style: normal; color: var(--warn); margin-left: 3px; }
+.btn.confirm { border-color: var(--warn); color: var(--warn); font-weight: 600; }
+.btn.confirm:hover { background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.draft-box { margin: 10px 0; padding: 10px 12px; border: 1px dashed var(--warn); border-radius: 8px; font-size: 13px; display: flex; gap: 10px; align-items: center; justify-content: space-between; }

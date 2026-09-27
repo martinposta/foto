@@ -14,6 +14,7 @@
       <span class="git-state" id="git-state"></span>
       <span class="repo-size" id="repo-size"></span>
       <a class="btn ghost" href="/preview/" target="gallery-preview">Náhled webu ↗</a>
+      <button class="btn confirm" id="confirm-btn" hidden title="Zveřejní všechny koncepty. Na GitHub pak odejdou tlačítkem Publikovat.">Potvrdit nové fotky (<span id="n-confirm">0</span>)</button>
       <button class="btn primary" id="publish-btn">Publikovat na GitHub</button>
     </div>
   </header>
@@ -27,6 +28,7 @@
       <div class="side-title">Fotky</div>
       <button class="side-item" data-filter="all">Všechny <span class="n" id="n-all"></span></button>
       <button class="side-item" data-filter="none">Bez kolekce <span class="n" id="n-none"></span></button>
+      <button class="side-item" data-filter="drafts">Koncepty <span class="n" id="n-drafts"></span></button>
       <div class="side-title">
         Kolekce
         <button class="mini" id="add-collection" title="Nová kolekce">+ nová</button>

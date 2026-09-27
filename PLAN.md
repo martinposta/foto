@@ -154,21 +154,22 @@ Cíl: z veřejného repa zmizí osobní e-mail (D23). Zároveň se zahodí histo
 
 ### Fáze 6: Koncepty, skryté fotky (2026-09-27)
 Scénář: nahrát a popsat celý výlet v klidu a zveřejnit ho najednou. Publikování mezitím nesmí nic z konceptů poslat ven (D24).
-- [ ] Stav fotky `draft`. Koncepty se ukládají **mimo git**: obrázky do `drafts/img/<id>/`, záznamy do `data/drafts.json`, obojí v `.gitignore`. **Zveřejnit** přesune záznam do `data/gallery.json` a obrázky do `docs/img/`.
-- [ ] Nové fotky se **vždy nahrávají jako koncept** (Q11). V horní liště adminu výrazné tlačítko **Potvrdit nové fotky (N)**, které zveřejní všechny koncepty najednou. Po potvrzení se změny odešlou až tlačítkem *Publikovat*, případně nabídnout obojí jedním krokem.
-- [ ] Admin: štítek *koncept* na náhledu, položka *Koncepty* v levém panelu s počtem, tlačítko **Zveřejnit** v editoru i v multivýběru, v multivýběru i *Vrátit do konceptů*. U vrácení upozornit, že už zveřejněná verze zůstane v historii gitu.
-- [ ] Koncepty fungují jako ostatní fotky: úpravy textů, kolekce, pořadí, nahrazení souboru, přepis autora, detekce duplicit přes `sourceHash`. Na webu se nikde neobjeví: `data.json`, stránky, počty, obaly kolekcí, OG, přesměrování. Kolekce jen s koncepty se na webu neukáže.
-- [ ] Náhled webu v adminu ukazuje stav jako online. Volitelně přepínač *Náhled včetně konceptů*.
-- [ ] Testy: po nahrání konceptu a publikování neobsahuje `git ls-files` ani `git show HEAD:data/gallery.json` nic z konceptu, v `docs/` není žádný soubor konceptu, po zveřejnění ano. Smazání konceptu nezanechá stopu v gitu.
-- [ ] Návaznost na existující funkce:
+- [x] Stav fotky `draft`. Koncepty se ukládají **mimo git**: obrázky do `drafts/img/<id>/`, záznamy do `data/drafts.json`, obojí v `.gitignore`. **Zveřejnit** přesune záznam do `data/gallery.json` a obrázky do `docs/img/`.
+- [x] Nové fotky se **vždy nahrávají jako koncept** (Q11). V horní liště adminu výrazné tlačítko **Potvrdit nové fotky (N)**, které zveřejní všechny koncepty najednou. Po potvrzení se změny odešlou až tlačítkem *Publikovat*, případně nabídnout obojí jedním krokem.
+- [x] Admin: štítek *koncept* na náhledu, položka *Koncepty* v levém panelu s počtem, tlačítko **Zveřejnit** v editoru i v multivýběru, v multivýběru i *Vrátit do konceptů*. U vrácení upozornit, že už zveřejněná verze zůstane v historii gitu.
+- [x] Koncepty fungují jako ostatní fotky: úpravy textů, kolekce, pořadí, nahrazení souboru, přepis autora, detekce duplicit přes `sourceHash`. Na webu se nikde neobjeví: `data.json`, stránky, počty, obaly kolekcí, OG, přesměrování. Kolekce jen s koncepty se na webu neukáže.
+- [x] Náhled webu v adminu ukazuje stav jako online. Volitelně přepínač *Náhled včetně konceptů*.
+- [x] Testy: po nahrání konceptu a publikování neobsahuje `git ls-files` ani `git show HEAD:data/gallery.json` nic z konceptu, v `docs/` není žádný soubor konceptu, po zveřejnění ano. Smazání konceptu nezanechá stopu v gitu.
+- [x] Návaznost na existující funkce:
   - **Vlastní pořadí** (fáze 4): koncepty v adminu vidět jsou, ale do `settings.order` ani `collection.order` se dostanou až při zveřejnění. Podle Q7 na začátek seznamu, u automatického řazení podle data.
   - **Skupiny a kolekce**: počty na webu jen ze zveřejněných fotek, v adminu zvlášť *(N konceptů)*.
   - **Nahrazení souboru** (2b): koncept zůstane konceptem a jeho soubory zůstanou v `drafts/`.
   - **Přepis autora** (2d): musí zahrnout i soubory v `drafts/img/`.
   - **Ukazatel velikosti** (2e): koncepty nepočítat, do repa zatím nepatří. Volitelně zobrazit zvlášť *koncepty X MB*.
   - **Smazání konceptu**: jen smazat soubory, git se ho netýká.
-- [ ] Migrace: stávajících 62 fotek zůstává zveřejněných, nic se nepřesouvá.
+- [x] Migrace: stávajících 62 fotek zůstává zveřejněných, nic se nepřesouvá.
 - Poznámka: koncepty nejsou zálohované na GitHubu (uživatel to přijal, D24). Na Macu je jistí Time Machine, po fázi 7b zálohy Proxmoxu.
+- Hotovo 2026-09-28: jeden model v paměti (`draft: true`), rozdělení až při ukládání (`gallery.json` / `drafts.json`, veřejnost kolekce odvozená z fotek), `drafts/img/`, `POST /api/drafts/publish`, `POST /api/photos/unpublish`, admin (štítek, přerušovaný rámeček, *Koncepty* v panelu, kolekce jen z konceptů kurzívou s počtem `+N`, *Potvrdit nové fotky (N)*, *Zveřejnit*/*Vrátit do konceptů*, v publikování *Potvrdit N fotek a publikovat*). Přepínač *Náhled včetně konceptů* ani velikost konceptů v liště nedělány (volitelné). **Nález při testu:** ochrana stála jen na `.gitignore` (testovací repo ho nemá a koncept tam do commitu prošel), proto publikování koncepty vylučuje samo a před commitem kontroluje. Obal kolekce nebo náhled webu nastavený na koncept zapíše do `gallery.json` jen id (hash, bez obsahu); web ho ignoruje.
 
 ### Fáze 7a: Synchronizace s GitHubem (D25, nápad uživatele 2026-09-27)
 Cíl: libovolná instance adminu (Proxmox, Mac) je rychle aktuální kopie. Když server odejde, stačí spustit admin na Macu a je všechno zpátky. Užitečné i dřív, než admin přejde na Proxmox.
@@ -367,3 +368,4 @@ Formát: `YYYY-MM-DD — kdo — co`
 - 2026-09-27 — Claude Code (Mac) — **Fáze 5 hotová.** Push nové historie prošel přes blokování (autor jen `Martin Porter <33331553+martinposta@users.noreply.github.com>`). Staré commity (`9c17a70`, `21ec086`, `f3daa45`) na GitHubu nedohledatelné (API 422). Pages: built, cert approved, HTTPS vynuceno, HTTP i `martinposta.github.io/foto/` → 301 na doménu. Živý web 70 fotek / 14 kolekcí / 8 skupin = lokální stav, fotka, kolekce, skupina, `og.jpg` 200, 404 OK, OG tagy s doménou, Cloudflare beacon s tokenem. Ukazatel velikosti ~67 MB (celá historie = současný obsah). Admin znovu běží. Další: fáze 5b.
 - 2026-09-27 — uživatel — Fáze 5b kroky 0–7: Email Routing zapnutý (starý MX Wedosu smazán v Cloudflare DNS, ne ve Wedosu), `foto@martinposta.com` → Gmail funguje, DMARC, Gmail *Odesílat jako* přes `smtp.gmail.com` s heslem aplikace.
 - 2026-09-27 — Claude Code (Mac) — Ověřeno DNS: MX `route1–3.mx.cloudflare.net`, DMARC `v=DMARC1; p=none`. SPF zatím bez Google, uživateli předán přesný obsah (`include:_spf.google.com`, upravit stávající záznam, ne přidat druhý). Kód 5b: `settings.contact = { user, domain }` (vstup `contactEmail` se neukládá celý), na webu odkaz *Email* v profilu, `mailto:` skládá `app.js` až v prohlížeči. Test prochází všechny soubory v `data/` a `docs/` a hledá celou adresu. Ověřeno v prohlížeči. `npm test` 31/31. **Fáze 5b hotová** (po úpravě SPF).
+- 2026-09-28 — Claude Code (Mac) — Email na první místo v odkazech profilu. **Fáze 6 hotová** (koncepty): viz fáze 6. `npm test` 32/32 (nový test kontroluje git i web). Ověřeno v adminu nad dočasnými daty: nahrání do nové kolekce/skupiny jen jako koncept, zveřejnění jedné i všech, vrácení do konceptů s upozorněním. Data uživatele: 70 fotek bez změny, žádná prázdná kolekce, přepnutí nic nepřesune.

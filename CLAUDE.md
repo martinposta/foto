@@ -38,7 +38,9 @@ lib/order.mjs         photo order of a list (automatic vs stored), reorder actio
 lib/build.mjs         data/gallery.json + site/ template → docs/ (HTML pages, data.json, assets, CNAME, 404)
 site/                 public site SOURCE: index.html template + app.js + style.css + fonts/ (Inter, self-hosted, OFL)
 docs/                 GENERATED public site (committed, served by GitHub Pages). Never edit by hand
-data/gallery.json     source of truth (committed, doubles as a backup on GitHub)
+data/gallery.json     source of truth for published content (committed, doubles as a backup on GitHub)
+data/drafts.json      drafts' records and draft-only collections (gitignored, D24)
+drafts/img/           drafts' derivatives (gitignored, outside docs/)
 tests/                node:test end-to-end suite
 ```
 
@@ -85,6 +87,7 @@ tests/                node:test end-to-end suite
 7. **Changing `IMAGE` settings only affects new uploads.** Originals aren't stored, so existing photos can't be re-rendered at a larger size. Downsizing or format conversion from the existing 2400 px derivative is possible but lossy. Warn the user before such changes.
 8. Photo ids are the content hash of the **first** upload and never change afterwards: `/f/<id>/` links get shared. Uploading the same file again returns `duplicate: true` and only adds the collection. **Replacing** a photo's file (`POST /api/photos/:id/replace`, PLAN phase 2b) keeps the id and every owner-written field, stores the new file's hash in `sourceHash` (duplicate detection checks `id` and `sourceHash`) and bumps `version`. Derivatives keep their file names, so every image URL carries `?v=<version>` (`v` in `data.json`, `og.jpg?v=` in OG tags, admin thumbnails) — drop it and browsers/Pages CDN keep showing the old version. New files are generated under `<id>.new` and moved in only on success.
 9. Keep `data/gallery.json` human-readable (2-space JSON). The user may edit or back it up by hand.
+10. **Drafts never reach git or the site** (D24, PLAN phase 6). Every upload is a draft (`draft: true`). In memory drafts are ordinary photos; only `saveData()` splits them: published photos and collections that hold at least one published photo → `gallery.json`, drafts and every other collection (empty or drafts-only, Q13) → `drafts.json`. Whether a collection is public is never stored, it follows from its photos on each save. Draft files live in `drafts/img/` (`photoDir(id, draft)`), move to `docs/img/` on publish (`movePhotoBetween`) and back on unpublish. `publicData`/`buildSite` filter drafts out; orders never contain drafts (they enter at the start when published). **Publishing does not rely on `.gitignore`**: `git add` excludes `drafts` and `data/drafts.json` by pathspec, untracks them if ever tracked, and aborts before committing if one is still staged — the test repo has no `.gitignore`, which is how the gap was found. The drafts test checks `git ls-files`, `git show HEAD:data/gallery.json` and `git log -p`.
 
 ## Testing
 

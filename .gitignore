@@ -6,3 +6,9 @@ Thumbs.db
 
 # Local test exports / originals. Originals must never reach the public repo.
 Galerie-test/
+
+# Drafts (D24): photos uploaded but not yet published. Neither their images nor their texts may
+# reach the public repo; Publish runs `git add -A`, so this is what keeps them out.
+drafts/
+data/drafts.json
+data/drafts.json.tmp
