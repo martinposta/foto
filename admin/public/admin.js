@@ -588,7 +588,10 @@
         <div class="hint">Vyplň jen když galerie běží na subdoméně. Zapíše se do souboru CNAME.</div></div>
       <div class="field"><label for="s-analytics">Statistika návštěv (Cloudflare Web Analytics)</label>
         <input type="text" id="s-analytics" value="${esc(s.analyticsToken || '')}" placeholder="token, nebo celý skript z Cloudflare">
-        <div class="hint">Cloudflare → Analytics &amp; Logs → Web Analytics → Add a site → foto.martinposta.com. Zkopíruj token (nebo celý nabídnutý skript) sem. Bez cookies. Náhled v adminu se nepočítá. Prázdné = žádná statistika.</div></div>`;
+        <div class="hint">Cloudflare → Analytics &amp; Logs → Web Analytics → Add a site → foto.martinposta.com. Zkopíruj token (nebo celý nabídnutý skript) sem. Bez cookies. Náhled v adminu se nepočítá. Prázdné = žádná statistika.</div></div>
+      <div class="field"><label for="s-contact">Kontaktní e-mail</label>
+        <input type="email" id="s-contact" value="${esc(s.contact ? `${s.contact.user}@${s.contact.domain}` : '')}" placeholder="foto@martinposta.com">
+        <div class="hint">Na webu se zobrazí jako odkaz <b>Email</b> u odkazů v profilu. Adresa se ukládá rozdělená a skládá se až v prohlížeči, takže ji roboti sbírající e-maily ze stránek ani z repa nenajdou. Prázdné = bez kontaktu.</div></div>`;
 
     const save = debounce(patch => saveSettingsNow(patch), 500);
     $('s-name').addEventListener('input', e => save({ name: e.target.value }));
@@ -608,6 +611,7 @@
     });
     $('s-url').addEventListener('change', e => saveSettingsNow({ siteUrl: e.target.value }));
     $('s-domain').addEventListener('change', e => saveSettingsNow({ customDomain: e.target.value }));
+    $('s-contact').addEventListener('change', async e => { await saveSettingsNow({ contactEmail: e.target.value }); const c = S.data.settings.contact; e.target.value = c ? `${c.user}@${c.domain}` : ''; });
     $('s-analytics').addEventListener('change', async e => { await saveSettingsNow({ analyticsToken: e.target.value }); e.target.value = S.data.settings.analyticsToken || ''; });
     $('s-sort').addEventListener('change', async e => { await saveSettingsNow({ sort: e.target.value }); renderMain(); });
     const saveLinks = debounce(() => {

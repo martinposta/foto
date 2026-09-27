@@ -103,6 +103,8 @@
 
   const LINK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.6 13.4a1 1 0 0 1 0-1.4l3.6-3.6a3 3 0 1 1 4.2 4.2l-2 2-1.4-1.4 2-2a1 1 0 1 0-1.4-1.4l-3.6 3.6a1 1 0 0 1-1.4 0Zm2.8-2.8a1 1 0 0 1 0 1.4l-3.6 3.6a3 3 0 1 1-4.2-4.2l2-2 1.4 1.4-2 2a1 1 0 1 0 1.4 1.4l3.6-3.6a1 1 0 0 1 1.4 0Z"/></svg>';
 
+  const MAIL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm8 7.2L5 7.6V17h14V7.6l-7 4.6ZM6.6 7l5.4 3.6L17.4 7H6.6Z"/></svg>';
+
   function renderStatic() {
     const s = DATA.settings;
     els.profile.innerHTML = `
@@ -110,9 +112,13 @@
       <div class="profile-text">
         <h1>${esc(s.name)}</h1>
         ${s.bio ? `<p class="bio">${esc(s.bio)}</p>` : ''}
-        ${s.links.length ? `<ul class="links">${s.links.map(l =>
-          `<li><a href="${esc(l.url)}" rel="noopener">${LINK_ICON}${esc(l.label || l.url.replace(/^https?:\/\/(www\.)?/, ''))}</a></li>`).join('')}</ul>` : ''}
+        ${s.links.length || s.contact ? `<ul class="links">${s.links.map(l =>
+          `<li><a href="${esc(l.url)}" rel="noopener">${LINK_ICON}${esc(l.label || l.url.replace(/^https?:\/\/(www\.)?/, ''))}</a></li>`).join('')}${
+          s.contact ? `<li><a data-mail rel="nofollow">${MAIL_ICON}Email</a></li>` : ''}</ul>` : ''}
       </div>`;
+    // Contact (D26): the address exists whole only here, in the live page, never in a file.
+    const mail = els.profile.querySelector('[data-mail]');
+    if (mail) mail.href = 'mailto:' + s.contact.u + '@' + s.contact.d;
     // Tab links are relative in the HTML; make them absolute so they work after pushState navigation.
     document.querySelector('[data-tab=photos]').href = ROOT.href;
     document.querySelector('[data-tab=collections]').href = url('collections/');

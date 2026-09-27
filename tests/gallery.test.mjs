@@ -764,3 +764,27 @@ test('redirects: renamed group and changed collection address keep old links wor
   await settle();
   assert.ok(!existsSync(docs('groups', 'czech-rep')), 'redirect disappears when its target is gone');
 });
+
+test('contact e-mail: stored split, never whole in any file, joined only in the browser', async () => {
+  let r = await api('PATCH', '/api/settings', { contactEmail: 'Foto@MartinPosta.com' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.deepEqual(r.json.contact, { user: 'Foto', domain: 'martinposta.com' });
+  assert.equal(r.json.contactEmail, undefined, 'the whole address is not stored');
+  await settle();
+  const pub = JSON.parse(await fs.readFile(docs('data.json'), 'utf8'));
+  assert.deepEqual(pub.settings.contact, { u: 'Foto', d: 'martinposta.com' });
+
+  // Every generated and stored file: no "user@domain" anywhere (any case).
+  const files = [path.join(dataRoot, 'data', 'gallery.json')];
+  const walk = async dir => { for (const e of await fs.readdir(dir, { withFileTypes: true })) {
+    const f = path.join(dir, e.name);
+    if (e.isDirectory()) await walk(f); else if (/\.(html|json|js|css|txt)$/.test(e.name)) files.push(f);
+  } };
+  await walk(docs());
+  for (const f of files) assert.doesNotMatch(await fs.readFile(f, 'utf8'), /foto@martinposta\.com/i, f);
+
+  r = await api('PATCH', '/api/settings', { contactEmail: 'foto(at)martinposta' });
+  assert.equal(r.status, 400);
+  r = await api('PATCH', '/api/settings', { contactEmail: '' });
+  assert.equal(r.json.contact, null);
+});

@@ -129,6 +129,10 @@ V detailu fotky:
 
 Přejmenování kolekce její adresu nemění. Adresa kolekce se změní, jen když ji sám přepíšeš v *Upravit kolekci → Adresa*. Adresa skupiny se mění s jejím názvem. V obou případech si admin pamatuje starou adresu a nechá na ní stránku, která návštěvníka hned pošle na novou, včetně náhledu pro sdílení. Už poslané odkazy tak fungují dál.
 
+## Kontaktní e-mail
+
+V *Profil a nastavení → Kontaktní e-mail* vyplň `foto@martinposta.com`. Na webu se v profilu objeví odkaz **Email**. Adresa se ukládá rozdělená a celá vznikne až v prohlížeči návštěvníka, takže ji roboti sbírající e-maily nenajdou ve stránkách ani v repu. Pošta chodí přes Cloudflare Email Routing do Gmailu (návod v PLAN.md, fáze 5b).
+
 ## Statistika návštěv
 
 Volitelně přes **Cloudflare Web Analytics**: bez cookies, zdarma, doménu už na Cloudflare máš.

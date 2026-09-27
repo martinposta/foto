@@ -132,7 +132,7 @@ body.dragging .drop { border-color: var(--sel); }
 .panel .preview.over { outline: 2px dashed var(--sel); outline-offset: 3px; }
 .field { margin-bottom: 12px; }
 .field > label, .field > .label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-.field input[type=text], .field input[type=url], .field input[type=datetime-local], .field textarea, .field select {
+.field input[type=text], .field input[type=email], .field input[type=url], .field input[type=datetime-local], .field textarea, .field select {
   width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg);
 }
 .field textarea { resize: vertical; min-height: 70px; }
