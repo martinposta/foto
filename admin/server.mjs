@@ -98,10 +98,12 @@ async function gitStatus() {
   };
 }
 
-// Drafts must never reach git (D24). .gitignore keeps them out, but publishing does not rely on
-// it alone: they are excluded from staging explicitly, untracked if something ever added them, and
-// a last check stops the publish before a commit exists if one is still staged. (The tests run in
-// a repo without the project's .gitignore, which is how the gap showed.)
+// Drafts must never reach git (D24). .gitignore keeps them out of `git add -A`, but publishing
+// does not rely on it alone: whatever of them got staged anyway is unstaged again, and a last
+// check stops the publish before a commit exists if one is still there. (The tests run in a repo
+// without the project's .gitignore, which is how the gap showed.) Do NOT name these paths in the
+// `git add` pathspec, not even as `:(exclude)`: with .gitignore present git then refuses the whole
+// add ("paths are ignored by one of your .gitignore files") — that broke real publishing once.
 const PRIVATE_PATHS = ['drafts', 'data/drafts.json'];
 const isPrivate = f => PRIVATE_PATHS.some(p => f === p || f.startsWith(p + '/'));
 
@@ -113,7 +115,7 @@ async function publish(message) {
   if (!status.repo) throw new G.UserError('Složka není git repozitář. Postup je v README (fáze 2).');
   if (!status.remote) throw new G.UserError('Repozitář nemá nastavený remote "origin". Postup je v README (fáze 2).');
 
-  await run(['add', '-A', '--', '.', ...PRIVATE_PATHS.map(p => `:(exclude)${p}`)]);
+  await run(['add', '-A']);
   await git(['rm', '-r', '--cached', '--ignore-unmatch', '--quiet', '--', ...PRIVATE_PATHS], { allowFail: true });
   const leaked = (await git(['diff', '--cached', '--name-only', '--diff-filter=ACMR'])).out.split('\n').filter(isPrivate);
   if (leaked.length) {

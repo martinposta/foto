@@ -829,6 +829,14 @@ test('drafts: never in git or on the site until published; publish, take back, r
   assert.doesNotMatch(git(dataRoot, 'show', 'HEAD:data/gallery.json'), new RegExp(`${d.id}|${secret.source}`));
   assert.doesNotMatch(git(dataRoot, 'log', '-p', '--all', '--', '.'), /Tajný výlet|Norsko 2027/, 'not in any commit');
 
+  // Same with the project's .gitignore in place (the real setup): publishing must still work.
+  // Naming ignored paths in `git add` made git refuse the whole add there (hit in real use).
+  await fs.copyFile(path.join(ROOT, '.gitignore'), path.join(dataRoot, '.gitignore'));
+  r = await api('POST', '/api/publish', { message: 'with .gitignore' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.doesNotMatch(git(dataRoot, 'ls-files'), new RegExp(`${d.id}|drafts`));
+  assert.match(git(dataRoot, 'ls-files'), /^\.gitignore$/m);
+
   // Orders and duplicates: a draft cannot be ordered, and re-uploading it is a duplicate.
   r = await api('POST', '/api/order', { list: 'all', action: 'end', ids: [d.id] });
   assert.equal(r.status, 400);

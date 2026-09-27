@@ -4,8 +4,12 @@
     "bio": "Fujifilm X-T30 II",
     "links": [
       {
-        "label": "martinposta.com",
+        "label": "Animations",
         "url": "https://www.martinposta.com"
+      },
+      {
+        "label": "Game Studio",
+        "url": "https://willownook.studio"
       }
     ],
     "siteUrl": "https://foto.martinposta.com/",
@@ -16,6 +20,10 @@
     "order": null,
     "copyright": "© Martin Porter",
     "analyticsToken": "ea2d251fdbe7427aa2f47897ef5440a0",
+    "contact": {
+      "user": "foto",
+      "domain": "martinposta.com"
+    },
     "avatarVersion": 1790446144805
   },
   "collections": [
@@ -75,6 +83,14 @@
       "description": "",
       "coverId": "",
       "group": "Czechia"
+    },
+    {
+      "id": "c7fbrn4n1ie",
+      "slug": "pariz",
+      "title": "Paříž",
+      "description": "",
+      "coverId": "",
+      "group": "France"
     },
     {
       "id": "c3weoqn5b94",
@@ -2372,6 +2388,71 @@
       "sourceHash": "84a2fadcc6c6",
       "version": 2,
       "replacedAt": "2026-09-27T16:17:32.880Z"
+    },
+    {
+      "id": "0f0ad0a5b696",
+      "originalName": "IMG_0467-upraveno.JPG",
+      "addedAt": "2026-09-27T21:48:42.105Z",
+      "takenAt": "2015-03-16T12:37:19",
+      "title": "",
+      "description": "",
+      "location": "Paříž, Francie",
+      "keywords": [],
+      "collections": [
+        "c7fbrn4n1ie"
+      ],
+      "exif": {
+        "camera": "Apple iPhone 5",
+        "lens": "iPhone 5 back camera 4.12mm f/2.4",
+        "focal": "4 mm",
+        "aperture": "f/2.4",
+        "shutter": "1/1938 s",
+        "iso": "ISO 50"
+      },
+      "width": 1536,
+      "height": 2048,
+      "widths": [
+        480,
+        960,
+        1536
+      ],
+      "format": "webp",
+      "color": "#878d9e",
+      "bytes": 1228453
+    },
+    {
+      "id": "5f2f8f2b4c61",
+      "originalName": "IMG_4184.jpg",
+      "addedAt": "2026-09-27T21:49:01.233Z",
+      "takenAt": "2026-07-09T17:41:18",
+      "title": "",
+      "description": "",
+      "location": "Edinburgh, UK",
+      "keywords": [],
+      "collections": [
+        "c7vjyobhdgi"
+      ],
+      "exif": {
+        "camera": "Apple iPhone 11",
+        "lens": "iPhone 11 back dual wide camera 4.25mm f/1.8",
+        "focal": "4 mm",
+        "aperture": "f/1.8",
+        "shutter": "1/3731 s",
+        "iso": "ISO 32"
+      },
+      "width": 2891,
+      "height": 3855,
+      "widths": [
+        480,
+        960,
+        1800
+      ],
+      "format": "webp",
+      "color": "#a19d87",
+      "bytes": 978861,
+      "sourceHash": "c6c2e0396412",
+      "version": 2,
+      "replacedAt": "2026-09-27T22:18:13.207Z"
     }
   ],
   "redirects": {}
