@@ -141,6 +141,24 @@ GitHub je hlavní kopie galerie. Admin se s ním srovnává sám:
 
 Nejjednodušší návyk: publikovat často. Co je publikované, je na GitHubu i v každé další kopii.
 
+### Druhý počítač (např. Windows)
+
+Galerie už na GitHubu je, takže se na další počítač **naklonuje**, nezakládá se znovu. Nekopíruj složku z Macu: `node_modules` obsahuje knihovnu pro zpracování obrázků sestavenou pro macOS a na Windows by nefungovala.
+
+1. Nainstaluj **Node.js LTS** (https://nodejs.org) a **Git for Windows** (https://git-scm.com/download/win), vše s výchozími volbami.
+2. V PowerShellu přejdi do složky, kde má galerie být, a naklonuj ji:
+   ```powershell
+   git clone https://github.com/martinposta/foto.git Fotogalerie
+   cd Fotogalerie
+   git config user.name "Martin Porter"
+   git config user.email "33331553+martinposta@users.noreply.github.com"
+   ```
+   Poslední dva řádky jsou důležité. Bez nich by git podepsal commity e-mailem z nastavení Windows a GitHub by publikování odmítl (blokování osobního e-mailu).
+3. Dvojklik na **`Galerie.cmd`**. Při prvním spuštění se nainstalují závislosti (asi minutu) a otevře se admin.
+4. Při prvním *Publikovat* se otevře okno pro přihlášení ke GitHubu (Git Credential Manager). Přihlas se, Git si to zapamatuje.
+
+Na tomhle počítači pak uvidíš všechno publikované. **Koncepty z Macu tu nebudou**, zůstávají tam, kde vznikly. Originály fotek admin nepotřebuje.
+
 ## Kontaktní e-mail
 
 V *Profil a nastavení → Kontaktní e-mail* vyplň `foto@martinposta.com`. Na webu se v profilu objeví odkaz **Email**. Adresa se ukládá rozdělená a celá vznikne až v prohlížeči návštěvníka, takže ji roboti sbírající e-maily nenajdou ve stránkách ani v repu. Pošta chodí přes Cloudflare Email Routing do Gmailu (návod v PLAN.md, fáze 5b).
