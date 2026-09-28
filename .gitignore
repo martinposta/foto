@@ -4,8 +4,18 @@ data/*.tmp
 Thumbs.db
 *.log
 
-# Local test exports / originals. Originals must never reach the public repo.
+# Local test exports / originals. Originals must never reach the public repo (invariant 1):
+# they carry full metadata, GPS included. Images dropped into the project root are ignored too
+# (tracked files such as the nahled-*.png screenshots stay tracked).
 Galerie-test/
+/*.jpg
+/*.jpeg
+/*.JPG
+/*.JPEG
+/*.tif
+/*.tiff
+/*.heic
+/*.HEIC
 
 # Drafts (D24): photos uploaded but not yet published. Neither their images nor their texts may
 # reach the public repo; Publish runs `git add -A`, so this is what keeps them out.

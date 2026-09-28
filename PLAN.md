@@ -113,7 +113,7 @@ Jednoduchý, pěkně prezentovatelný odkaz na osobní fotky, který jde poslat 
 
 ## Další kroky
 
-- [ ] Ověřit na jedné nově exportované fotce z Capture One s vyplněným Title / Description / Sublocation / City / Country, že se všechno načte.
+- [x] Ověřit na jedné nově exportované fotce z Capture One s vyplněným Title / Description / Sublocation / City / Country, že se všechno načte. **Ověřeno 2026-09-28** na exportu uživatele: Headline → Název, Description → Popis, Location + Country → Místo („Florence, Italy“).
 - [ ] Na Windows ověřit `Galerie.cmd` a přihlášení (až to bude potřeba).
 - Pořadí dalších fází: **5 → 5b → 6 → 7a → 7b**.
 
@@ -217,7 +217,7 @@ Kopie na webu se generují jen při nahrání. Fotky nahrané dřív by copyrigh
 - [x] Změřeno na 67 skutečných fotkách (Capture One export, Fujifilm X-T30 II + 1× iPhone, 4–35 MB, celkem 1 GB): **web 72,5 MB, průměr 1,06 MB/fotka → cca 950 fotek do 1 GB**. Rozpad: 2400 px 19 MB, 1600 px 20 MB, 960 px 9 MB, 480 px 2 MB, og.jpg 9 MB. Zpracování ~3 s/fotka. Téměř duplicitní šířky (1600 vedle 1619) se už negenerují, úspora ~5 %.
 - [x] Zkontrolovat kvalitu WebP q82 na detailech (listí, noční nebe, gradienty). Porovnání 9 fotek připravené v `Galerie-test/_porovnani/index.html` (mimo git). Na 9 fotkách: q82 4,7 MB, **q90 +58 %**, **AVIF q60 −35 %**. Zjištění: rozdíly jsou vidět jen při zvětšení, q82 i AVIF vyhlazují filmové zrno (vysoké ISO, kůže), q90 ho drží. **Rozhodnuto: zůstává q82 (D13).**
 - [x] Nástroj uživatele: **Capture One** (22/23). Testovací exporty nemají vyplněný titulek, popis, klíčová slova ani místo (jen EXIF + copyright), takže import je teď prázdný. Z EXIF se čte fotoaparát, objektiv, expozice a datum u všech 67. Doplněno čtení *Sublocation* (`Iptc4xmpCore:Location`) do pole Místo a oprava fotoaparátu u fotky, která prošla Adobe (Make „Adobe Systems Inc.“, Model „Tiff File“ → „iPhone 11“ z názvu objektivu). Oba případy mají test.
-- [ ] Ověřit na jedné nově exportované fotce z Capture One s vyplněným Title/Description/místem, že se vše načte (zatím ověřeno jen na syntetickém XMP).
+- [x] Ověřit na jedné nově exportované fotce z Capture One s vyplněným Title/Description/místem, že se vše načte (zatím ověřeno jen na syntetickém XMP). **Ověřeno 2026-09-28** na exportu uživatele: Headline → Název, Description → Popis, Location + Country → Místo („Florence, Italy“).
 - [x] Barvy: 53 exportů má ICC sRGB, 14 nemá profil, ale EXIF ColorSpace = sRGB. Adobe RGB / P3 se v exportech nevyskytuje, převod není potřeba řešit. GPS (iPhone fotka) na webové verze neprojde, ověřeno.
 - [x] Otestovat sdílení odkazu v Messengeru a WhatsAppu (náhled obrázku, titulek). Ověřeno uživatelem 2026-09-26, dopadlo dobře.
 
@@ -377,3 +377,4 @@ Formát: `YYYY-MM-DD — kdo — co`
 - 2026-09-28 — Claude Code (Mac) — **Fáze 7a hotová** (synchronizace s GitHubem), viz fáze 7a. `npm test` 35/35. Ověřeno v UI nad dočasným „GitHubem“ se dvěma kopiemi: tlačítko *Synchronizovat*, varování *publikuj*, spojení různých polí téže fotky při publikování. Skutečný admin se spojil s GitHubem bez chyby.
 - 2026-09-28 — uživatel — Proxmox (7b) zatím odložen, zkusí Windows verzi.
 - 2026-09-28 — Claude Code (Mac) — README: postup pro druhý počítač (klonování, `git config` s noreply adresou kvůli blokování osobního e-mailu, `Galerie.cmd`, přihlášení přes GCM, koncepty se nepřenášejí).
+- 2026-09-28 — Claude Code (Mac) — Metadata z Capture One ověřena na skutečném exportu (Headline, Description, Location, Country, datum, fotoaparát). Zástupný objektiv „-- mm f/--“ (telefon bez údaje) se ignoruje (test). `.gitignore`: obrázky v kořeni složky (`/*.jpg` apod.) — testovací export s GPS tam ležel neignorovaný a publikování by ho poslalo do veřejného repa. Soubor na přání uživatele smazán.

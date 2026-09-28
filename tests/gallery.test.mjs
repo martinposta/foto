@@ -304,6 +304,10 @@ test('metadata: Capture One location fields and a phone photo re-saved through A
   assert.equal(m.location, 'Boubín, Kvilda, Česko');
   assert.equal(m.exif.camera, 'iPhone 11');
   assert.equal(m.exif.lens, 'iPhone 11 back dual wide camera 4.25mm f/1.8');
+  // Capture One writes a placeholder lens for phones that record none; it is not a lens.
+  const ph = await sharp({ create: { width: 32, height: 32, channels: 3, background: '#555' } })
+    .withExif({ IFD0: { Make: 'OnePlus', Model: 'ONEPLUS A3003' }, IFD2: { LensModel: '-- mm f/--' } }).jpeg().toBuffer();
+  assert.equal((await readMetadata(ph)).exif.lens, '');
 });
 
 test('widths: no near-duplicate step next to the largest width', () => {
