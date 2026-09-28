@@ -16,6 +16,7 @@ import sharp from 'sharp';
 import exifr from 'exifr';
 import { readMetadata, targetWidths } from '../lib/images.mjs';
 import { orderedPhotos, reorder } from '../lib/order.mjs';
+import { mergeGallery } from '../lib/merge.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 4399;
@@ -873,4 +874,165 @@ test('drafts: never in git or on the site until published; publish, take back, r
   assert.ok(!existsSync(draftFile(d.id)) && !existsSync(docs('img', d.id)));
   await api('DELETE', `/api/collections/${coll.id}`);
   await api('POST', '/api/order', { list: 'all', action: 'reset' });
+});
+
+// ---------------------------------------------------------------------------
+// Sync with GitHub (D25): a second clone plays "the other admin instance" against the same bare repo.
+
+async function otherClone(name) {
+  const dir = path.join(tmp, name);
+  if (!existsSync(dir)) {
+    git(tmp, 'clone', '-q', remote, dir);
+    git(dir, 'config', 'user.name', 'Other');
+    git(dir, 'config', 'user.email', 'other@example.com');
+  } else git(dir, 'pull', '-q');
+  return dir;
+}
+// Edit data in the other clone, rebuild its site with the same code (as its admin would), push.
+async function otherPublishes(dir, edit, msg) {
+  const f = path.join(dir, 'data', 'gallery.json');
+  const d = JSON.parse(await fs.readFile(f, 'utf8'));
+  edit(d);
+  await fs.writeFile(f, JSON.stringify(d, null, 2) + '\n');
+  execFileSync(process.execPath, [path.join(ROOT, 'lib', 'cli-rebuild.mjs')], { env: { ...process.env, GALLERY_DATA_ROOT: dir }, stdio: 'ignore' });
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-qm', msg);
+  git(dir, 'push', '-q');
+}
+const titleOn = (d, id) => d.photos.find(p => p.id === id)?.title;
+
+test('sync: fast-forward when clean; with local edits publish merges both; a data conflict stops everything', async () => {
+  const { json: ja } = await apiUpload('POST', '/api/upload?name=syncA.jpg', undefined, await makeJpeg({ w: 900, h: 600, color: '#8338ec' }));
+  const { json: jb } = await apiUpload('POST', '/api/upload?name=syncB.jpg', undefined, await makeJpeg({ w: 900, h: 600, color: '#ff006e' }));
+  const A = ja.photo.id, B = jb.photo.id;
+  let r = await api('POST', '/api/publish', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  const other = await otherClone('other');
+
+  // 1. Clean copy: check sees it, sync fast-forwards and the admin's memory follows the files.
+  await otherPublishes(other, d => { d.photos.find(p => p.id === A).title = 'Z druhé kopie'; }, 'other: title A');
+  r = await api('POST', '/api/sync/check', {});
+  assert.equal(r.json.behind, 1);
+  assert.equal(r.json.fetchError, '');
+  r = await api('POST', '/api/sync', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal(r.json.pulled, 1);
+  let { json: st } = await api('GET', '/api/state');
+  assert.equal(titleOn(st.data, A), 'Z druhé kopie', 'reloaded from disk, not the stale memory');
+  assert.deepEqual([st.git.ahead, st.git.behind, st.git.changes], [0, 0, 0], 'same code builds the same site');
+
+  // 2. Both sides changed different photos: sync refuses, publish rebases and merges both.
+  await otherPublishes(other, d => { d.photos.find(p => p.id === A).title = 'Druhá kopie znovu'; }, 'other: title A again');
+  await api('PATCH', `/api/photos/${B}`, { title: 'Tady upraveno' });
+  await settle();
+  r = await api('POST', '/api/sync/check', {});
+  assert.equal(r.json.behind, 1);
+  assert.ok(r.json.changes > 0);
+  r = await api('POST', '/api/sync', {});
+  assert.equal(r.status, 400);
+  assert.match(r.json.error, /Publikovat/);
+  r = await api('POST', '/api/publish', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.match(r.json.log, /spojuji/);
+  assert.match(r.json.log, /Konflikt ve vygenerovaném webu/, 'both sides rebuilt docs/data.json: the Q15 path ran');
+  const onGitHub = JSON.parse(git(tmp, '--git-dir', remote, 'show', 'main:data/gallery.json'));
+  assert.equal(titleOn(onGitHub, A), 'Druhá kopie znovu');
+  assert.equal(titleOn(onGitHub, B), 'Tady upraveno');
+  const siteOnGitHub = git(tmp, '--git-dir', remote, 'show', 'main:docs/data.json');
+  assert.match(siteOnGitHub, /Druhá kopie znovu/, 'site rebuilt from the merged data (docs conflict settled)');
+  assert.match(siteOnGitHub, /Tady upraveno/);
+  ({ json: st } = await api('GET', '/api/state'));
+  assert.deepEqual([titleOn(st.data, A), titleOn(st.data, B)], ['Druhá kopie znovu', 'Tady upraveno']);
+  assert.deepEqual([st.git.ahead, st.git.behind], [0, 0]);
+
+  // 2b. Same photo, different fields: git's line merge calls that a conflict (the fields are
+  // neighbouring lines); the semantic merge of gallery.json takes both.
+  await otherClone('other');
+  await otherPublishes(other, d => { d.photos.find(p => p.id === A).description = 'Popis z druhé kopie'; }, 'other: description A');
+  await api('PATCH', `/api/photos/${A}`, { location: 'Místo odsud' });
+  await settle();
+  r = await api('POST', '/api/publish', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.match(r.json.log, /po jednotlivých polích/);
+  const both = JSON.parse(git(tmp, '--git-dir', remote, 'show', 'main:data/gallery.json')).photos.find(p => p.id === A);
+  assert.deepEqual([both.description, both.location], ['Popis z druhé kopie', 'Místo odsud']);
+
+  // 3. Both changed the same field: nothing is sent, nothing is lost, no rebase left half-done.
+  await otherClone('other');
+  await otherPublishes(other, d => { d.photos.find(p => p.id === A).title = 'Konflikt tam'; }, 'other: conflict');
+  await api('PATCH', `/api/photos/${A}`, { title: 'Konflikt tady' });
+  await settle();
+  r = await api('POST', '/api/publish', {});
+  assert.equal(r.status, 400);
+  assert.match(r.json.error, /změnilo totéž.*fotka „Konflikt tady“: title/s);
+  assert.ok(!existsSync(path.join(dataRoot, '.git', 'rebase-merge')) && !existsSync(path.join(dataRoot, '.git', 'rebase-apply')));
+  assert.equal(titleOn(JSON.parse(git(tmp, '--git-dir', remote, 'show', 'main:data/gallery.json')), A), 'Konflikt tam', 'GitHub untouched');
+  ({ json: st } = await api('GET', '/api/state'));
+  assert.equal(titleOn(st.data, A), 'Konflikt tady', 'local edit kept');
+  assert.equal(st.git.ahead, 1, 'kept in a local commit');
+
+  // Leave the shared test repo in step with GitHub for any later test.
+  git(dataRoot, 'reset', '-q', '--hard', '@{u}');
+});
+
+test('sync on start: a freshly started admin catches up with what another copy published', async () => {
+  const third = await otherClone('third');
+  const other = await otherClone('other');
+  const { photos } = JSON.parse(await fs.readFile(path.join(third, 'data', 'gallery.json'), 'utf8'));
+  const id = photos[0].id;
+  await otherPublishes(other, d => { d.photos.find(p => p.id === id).title = 'Při startu'; }, 'other: before start');
+
+  const port = 4398;
+  const srv = spawn(process.execPath, [path.join(ROOT, 'admin', 'server.mjs')], {
+    env: { ...process.env, PORT: String(port), NO_OPEN: '1', GALLERY_DATA_ROOT: third }, stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let log = '';
+  srv.stdout.on('data', d => (log += d));
+  srv.stderr.on('data', d => (log += d));
+  try {
+    for (let i = 0; i < 100 && !log.includes(String(port)); i++) await sleep(100);
+    assert.match(log, /Staženo z GitHubu: 1/);
+    const st = await (await fetch(`http://localhost:${port}/api/state`)).json();
+    assert.equal(titleOn(st.data, id), 'Při startu');
+    assert.equal(st.git.behind, 0);
+  } finally {
+    srv.kill();
+    await sleep(200);
+  }
+});
+
+test('merge (lib): gallery.json three-way by record and field', () => {
+  const photo = (id, extra = {}) => ({ id, title: '', description: '', location: '', collections: [], ...extra });
+  const base = { settings: { name: 'A', bio: 'x', order: null }, collections: [{ id: 'c1', title: 'Hory' }], photos: [photo('p1'), photo('p2'), photo('p3')], redirects: {} };
+  const ours = structuredClone(base), theirs = structuredClone(base);
+  ours.photos[0].description = 'popis';            // same photo, different fields
+  theirs.photos[0].location = 'místo';
+  ours.settings.bio = 'nové bio';                  // settings key by key
+  theirs.settings.name = 'Martin Porter';
+  theirs.photos.push(photo('p4', { title: 'nová' })); // added on one side
+  ours.photos = ours.photos.filter(p => p.id !== 'p2'); // deleted on one side, untouched on the other
+  theirs.collections.push({ id: 'c2', title: 'Moře' });
+  ours.redirects['groups/a/'] = 'groups/b/';
+  let { merged, conflicts } = mergeGallery(base, ours, theirs);
+  assert.deepEqual(conflicts, []);
+  assert.deepEqual(merged.photos.map(p => p.id), ['p1', 'p3', 'p4']);
+  assert.deepEqual([merged.photos[0].description, merged.photos[0].location], ['popis', 'místo']);
+  assert.deepEqual([merged.settings.name, merged.settings.bio], ['Martin Porter', 'nové bio']);
+  assert.deepEqual(merged.collections.map(c => c.id), ['c1', 'c2']);
+  assert.equal(merged.redirects['groups/a/'], 'groups/b/');
+
+  // Same field to different values, and delete-vs-edit, are real conflicts, named for the owner.
+  const o2 = structuredClone(base), t2 = structuredClone(base);
+  o2.photos[0].title = 'tady'; t2.photos[0].title = 'tam';
+  o2.photos = o2.photos.filter(p => p.id !== 'p3'); t2.photos[2].title = 'upraveno';
+  o2.settings.order = ['p1']; t2.settings.order = ['p2'];
+  ({ conflicts } = mergeGallery(base, o2, t2));
+  assert.equal(conflicts.length, 3);
+  assert.ok(conflicts.some(c => /fotka „tam“: title/.test(c)), 'named as this copy (theirs) knows it');
+  assert.ok(conflicts.some(c => /smazáno na jedné straně/.test(c)));
+  assert.ok(conflicts.some(c => /nastavení: order/.test(c)));
+  // Same change on both sides is no conflict.
+  const o3 = structuredClone(base), t3 = structuredClone(base);
+  o3.photos[1].title = t3.photos[1].title = 'shoda';
+  assert.deepEqual(mergeGallery(base, o3, t3).conflicts, []);
 });

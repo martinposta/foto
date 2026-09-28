@@ -129,6 +129,18 @@ V detailu fotky:
 
 Přejmenování kolekce její adresu nemění. Adresa kolekce se změní, jen když ji sám přepíšeš v *Upravit kolekci → Adresa*. Adresa skupiny se mění s jejím názvem. V obou případech si admin pamatuje starou adresu a nechá na ní stránku, která návštěvníka hned pošle na novou, včetně náhledu pro sdílení. Už poslané odkazy tak fungují dál.
 
+## Víc kopií adminu (synchronizace s GitHubem)
+
+GitHub je hlavní kopie galerie. Admin se s ním srovnává sám:
+
+- **Při spuštění** stáhne, co mezitím publikovala jiná kopie (třeba admin na serveru), pokud nemáš nepublikované úpravy.
+- **Průběžně** (každých 5 minut a při návratu do okna) se ptá GitHubu. Když je tam něco nového, v horní liště se objeví **↓ Synchronizovat**. Když máš zároveň nepublikované úpravy, uvidíš **↓ … na GitHubu · publikuj**.
+- **Publikovat** vždycky nejdřív stáhne novější stav z GitHubu a spojí ho s tvými změnami. Úpravy různých polí téže fotky (třeba popis na jedné kopii, místo na druhé) se spojí samy. Jen když obě kopie změní **totéž pole** na něco jiného, publikování se zastaví, nic neodešle a tvoje změny zůstanou. To se vyřeší v Claude Code.
+- **Koncepty se nesynchronizují.** Zůstávají v kopii adminu, kde vznikly.
+- Pokud z GitHubu přijde nový kód adminu, v liště se objeví **Nový kód · restartuj admin** (zavřít a znovu spustit `Galerie.command`).
+
+Nejjednodušší návyk: publikovat často. Co je publikované, je na GitHubu i v každé další kopii.
+
 ## Kontaktní e-mail
 
 V *Profil a nastavení → Kontaktní e-mail* vyplň `foto@martinposta.com`. Na webu se v profilu objeví odkaz **Email**. Adresa se ukládá rozdělená a celá vznikne až v prohlížeči návštěvníka, takže ji roboti sbírající e-maily nenajdou ve stránkách ani v repu. Pošta chodí přes Cloudflare Email Routing do Gmailu (návod v PLAN.md, fáze 5b).

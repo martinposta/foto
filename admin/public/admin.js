@@ -151,7 +151,47 @@
     el.textContent = dirty ? '● Nepublikované změny' : '✓ Vše publikováno';
     el.title = g.remote || '';
     renderRepoSize(g.size);
+    renderSync(g);
   }
+
+  // Sync with GitHub (D25): what the last fetch said, next to the publish state.
+  function renderSync(g) {
+    const el = $('sync-state');
+    const n = g.behind || 0, few = n === 1 ? '1 změna' : n < 5 ? `${n} změny` : `${n} změn`;
+    let html = '';
+    if (g.fetchError) html = `<span class="sync warn" title="${esc(g.fetchError)}">GitHub nedostupný</span>`;
+    else if (n && (g.changes || g.ahead)) {
+      html = `<span class="sync warn" title="Na GitHubu jsou změny z jiné kopie adminu a ty máš nepublikované úpravy. Publikovat je nejdřív stáhne a spojí s tvými.">↓ ${few} na GitHubu · publikuj</span>`;
+    } else if (n) {
+      html = `<button class="btn small" id="sync-btn" title="Stáhne, co bylo publikováno z jiné kopie adminu. Koncepty se nesynchronizují, zůstávají v kopii, kde vznikly.">↓ Synchronizovat (${few})</button>`;
+    }
+    if (g.restartNeeded) html += `<span class="sync warn" title="Z GitHubu přišel nový kód adminu. Projeví se po restartu (zavřít a znovu spustit Galerie.command).">Nový kód · restartuj admin</span>`;
+    el.innerHTML = html;
+    $('sync-btn')?.addEventListener('click', syncNow);
+  }
+
+  async function syncNow() {
+    saving(true);
+    try {
+      const r = await api('POST', '/api/sync', {});
+      const st = await api('GET', '/api/state');
+      S.data = st.data; S.git = st.git;
+      S.selected.clear();
+      renderAll();
+      toast(r.pulled ? `Staženo z GitHubu. Koncepty zůstávají jen v této kopii.` : 'Všechno je aktuální.');
+    } catch (e) { fail(e); refreshGitSoon(0); }
+    finally { saving(false); }
+  }
+
+  // Ask GitHub for news on start, every 5 minutes and when the window comes back to front.
+  let lastCheck = 0;
+  async function checkGitHub() {
+    if (Date.now() - lastCheck < 60 * 1000) return;
+    lastCheck = Date.now();
+    try { S.git = await api('POST', '/api/sync/check', {}); renderGit(); } catch (e) { console.warn(e); }
+  }
+  setInterval(() => { lastCheck = 0; checkGitHub(); }, 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkGitHub(); });
 
   const fmtBytes = b => b >= 1e9 ? `${(b / 1024 ** 3).toFixed(2).replace('.', ',')} GB` : `${Math.max(1, Math.round(b / 1024 ** 2))} MB`;
 
@@ -1031,5 +1071,6 @@
     S.git = r.git;
     S.image = r.image;
     renderAll();
+    checkGitHub();
   }).catch(fail);
 })();

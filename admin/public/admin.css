@@ -203,3 +203,6 @@ button.side-group:hover .edit { opacity: 1; }
 .btn.confirm { border-color: var(--warn); color: var(--warn); font-weight: 600; }
 .btn.confirm:hover { background: color-mix(in srgb, var(--warn) 12%, transparent); }
 .draft-box { margin: 10px 0; padding: 10px 12px; border: 1px dashed var(--warn); border-radius: 8px; font-size: 13px; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.sync-state { display: flex; align-items: center; gap: 6px; }
+.sync { font-size: 12px; white-space: nowrap; cursor: help; }
+.sync.warn { color: var(--warn); font-weight: 600; }

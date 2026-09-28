@@ -11,9 +11,10 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { ADMIN, IMAGE, PATHS, DATA_ROOT } from '../lib/config.mjs';
-import { loadData } from '../lib/store.mjs';
+import { loadData, reloadData } from '../lib/store.mjs';
 import { buildSite } from '../lib/build.mjs';
 import * as G from '../lib/gallery.mjs';
+import { configureGit, gitStatus, gitBusy, fetchRemote, syncPull, startupSync, publish } from './git.mjs';
 
 const MAX_UPLOAD = 120 * 1024 * 1024;
 const ORIGINS = new Set([`http://localhost:${ADMIN.port}`, `http://127.0.0.1:${ADMIN.port}`]);
@@ -36,109 +37,6 @@ async function buildNow() {
   clearTimeout(buildTimer);
   buildPromise = buildPromise.then(buildSite);
   return buildPromise;
-}
-
-// ---------- git ----------
-
-function git(args, { allowFail = false } = {}) {
-  return new Promise((resolve, reject) => {
-    // Do not set GIT_TERMINAL_PROMPT=0: Git Credential Manager treats it as "no interaction"
-    // and would suppress the GitHub sign-in window on the first push.
-    const p = spawn('git', args, { cwd: DATA_ROOT, windowsHide: true });
-    let out = '', err = '';
-    p.stdout.on('data', d => (out += d));
-    p.stderr.on('data', d => (err += d));
-    p.on('error', e => (allowFail ? resolve({ code: -1, out, err: e.message }) : reject(new G.UserError(
-      'Git není nainstalovaný nebo není v PATH. Na Macu spusť v Terminálu „xcode-select --install“, na Windows nainstaluj Git for Windows (git-scm.com). Pak spusť admin znovu.'))));
-    p.on('close', code => {
-      if (code !== 0 && !allowFail) reject(new G.UserError(`git ${args.join(' ')} selhal:\n${(err || out).trim()}`));
-      else resolve({ code, out: out.trim(), err: err.trim() });
-    });
-  });
-}
-
-// GitHub recommends repositories under 1 GB (the Pages site limit is 1 GB too). History counts:
-// deleted or replaced photos stay in it, so the size is measured from git, not from docs/.
-const REPO_LIMIT = 1024 ** 3;
-
-async function repoSize(porcelain) {
-  const r = await git(['count-objects', '-v'], { allowFail: true });
-  const kib = key => Number(r.out.match(new RegExp(`^${key}: (\\d+)`, 'm'))?.[1] || 0);
-  const stored = (kib('size') + kib('size-pack')) * 1024;
-  // Uploads not committed yet: the next publish adds them (WebP/JPEG barely compress further).
-  let pending = 0;
-  for (const line of porcelain ? porcelain.split('\n') : []) {
-    const file = line.slice(3);
-    if (!file.startsWith('docs/img/') || line.startsWith(' D') || line.startsWith('D ')) continue;
-    try { pending += (await fsp.stat(path.join(DATA_ROOT, file))).size; } catch { /* vanished meanwhile */ }
-  }
-  return { stored, pending, limit: REPO_LIMIT };
-}
-
-async function gitStatus() {
-  const repo = await git(['rev-parse', '--is-inside-work-tree'], { allowFail: true });
-  if (repo.code !== 0 || repo.out !== 'true') return { repo: false, changes: 0, error: repo.code === -1 ? repo.err : '' };
-  const [st, remote, upstream] = await Promise.all([
-    git(['status', '--porcelain=v1', '--untracked-files=all'], { allowFail: true }),
-    git(['remote', 'get-url', 'origin'], { allowFail: true }),
-    git(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'], { allowFail: true }),
-  ]);
-  let ahead = 0;
-  if (upstream.code === 0) {
-    const a = await git(['rev-list', '--count', '@{u}..HEAD'], { allowFail: true });
-    ahead = Number(a.out) || 0;
-  }
-  return {
-    repo: true,
-    size: await repoSize(st.out),
-    changes: st.out ? st.out.split('\n').filter(l => !isPrivate(l.slice(3))).length : 0,
-    remote: remote.code === 0 ? remote.out : '',
-    upstream: upstream.code === 0 ? upstream.out : '',
-    ahead,
-  };
-}
-
-// Drafts must never reach git (D24). .gitignore keeps them out of `git add -A`, but publishing
-// does not rely on it alone: whatever of them got staged anyway is unstaged again, and a last
-// check stops the publish before a commit exists if one is still there. (The tests run in a repo
-// without the project's .gitignore, which is how the gap showed.) Do NOT name these paths in the
-// `git add` pathspec, not even as `:(exclude)`: with .gitignore present git then refuses the whole
-// add ("paths are ignored by one of your .gitignore files") — that broke real publishing once.
-const PRIVATE_PATHS = ['drafts', 'data/drafts.json'];
-const isPrivate = f => PRIVATE_PATHS.some(p => f === p || f.startsWith(p + '/'));
-
-async function publish(message) {
-  await buildNow();
-  const log = [];
-  const run = async args => { const r = await git(args); log.push(`$ git ${args.join(' ')}`, r.out, r.err); return r; };
-  const status = await gitStatus();
-  if (!status.repo) throw new G.UserError('Složka není git repozitář. Postup je v README (fáze 2).');
-  if (!status.remote) throw new G.UserError('Repozitář nemá nastavený remote "origin". Postup je v README (fáze 2).');
-
-  await run(['add', '-A']);
-  await git(['rm', '-r', '--cached', '--ignore-unmatch', '--quiet', '--', ...PRIVATE_PATHS], { allowFail: true });
-  const leaked = (await git(['diff', '--cached', '--name-only', '--diff-filter=ACMR'])).out.split('\n').filter(isPrivate);
-  if (leaked.length) {
-    await git(['reset', '--quiet'], { allowFail: true });
-    throw new G.UserError(`Publikování zastaveno: do commitu by se dostal koncept (${leaked.slice(0, 3).join(', ')}). Nic se neodeslalo.`);
-  }
-  const staged = await git(['diff', '--cached', '--quiet'], { allowFail: true });
-  if (staged.code === 1) {
-    const stamp = new Date().toLocaleString('cs-CZ', { dateStyle: 'short', timeStyle: 'short' });
-    try {
-      await run(['commit', '-m', message?.trim() || `Aktualizace galerie ${stamp}`]);
-    } catch (e) {
-      if (/user\.email|Please tell me who you are/i.test(e.message)) {
-        throw new G.UserError('Git nezná tvé jméno a e-mail. Spusť jednou v PowerShellu:\n  git config --global user.name "Tvoje Jméno"\n  git config --global user.email "tvuj@email.cz"');
-      }
-      throw e;
-    }
-  } else {
-    log.push('Žádné nové změny k uložení, jen odesílám.');
-  }
-  if (status.upstream) await run(['push']);
-  else await run(['push', '-u', 'origin', 'HEAD']);
-  return { log: log.filter(Boolean).join('\n'), status: await gitStatus() };
 }
 
 // ---------- http helpers ----------
@@ -199,6 +97,16 @@ async function api(req, res, url) {
     await buildPromise;
     return send(res, 200, await gitStatus());
   }
+  // Sync with GitHub (D25). check = fetch only; sync = fast-forward when nothing is unpublished.
+  if (m === 'POST' && p === '/api/sync/check') {
+    if (!gitBusy()) await fetchRemote();
+    return send(res, 200, await gitStatus());
+  }
+  if (m === 'POST' && p === '/api/sync') return send(res, 200, await syncPull());
+  if (m === 'POST' && p === '/api/publish') return send(res, 200, await publish((await readJson(req)).message));
+  // While git rewrites the data files (pull, rebase), an edit would be written into the middle of
+  // it and lost or mixed in. The UI waits; a stray request gets a readable refusal.
+  if (m !== 'GET' && gitBusy()) return send(res, 409, { error: 'Právě probíhá synchronizace s GitHubem, zkus to za chvíli.' });
   const uploadName = () => {
     const name = url.searchParams.get('name') || 'foto.jpg';
     if (!IMAGE.acceptedExt.includes(path.extname(name).toLowerCase())) {
@@ -227,7 +135,6 @@ async function api(req, res, url) {
   else if (m === 'DELETE' && (r = p.match(/^\/api\/collections\/([\w-]+)$/))) r = await G.deleteCollection(r[1]);
   else if (m === 'PATCH' && p === '/api/settings') r = await G.updateSettings(await readJson(req));
   else if (m === 'POST' && p === '/api/avatar') r = await G.setAvatar(await readBody(req));
-  else if (m === 'POST' && p === '/api/publish') return send(res, 200, await publish((await readJson(req)).message));
   else return send(res, 404, { error: 'Neznámý požadavek' });
 
   scheduleBuild();
@@ -255,6 +162,11 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+configureGit({ buildNow, reload: reloadData });
+// Catch up with GitHub before anything is loaded (D25): another instance may have published.
+const started = await startupSync();
+if (started.pulled) console.log(`\n  Staženo z GitHubu: ${started.pulled} ${started.pulled === 1 ? 'změna' : 'změn'}.`);
+else if (started.behind) console.log(`\n  Na GitHubu jsou novější změny (${started.behind}), ale máš nepublikované úpravy. Publikuj, spojí se.`);
 await loadData();
 await buildSite();
 
