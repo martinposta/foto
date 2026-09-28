@@ -109,6 +109,14 @@
       "group": "Italy"
     },
     {
+      "id": "c36sy74ah7m",
+      "slug": "kyoto",
+      "title": "Kyoto",
+      "description": "",
+      "coverId": "",
+      "group": "Japan"
+    },
+    {
       "id": "cvqua4pkgsc",
       "slug": "animals",
       "title": "Animals",
@@ -2919,6 +2927,259 @@
       "format": "webp",
       "color": "#7a6a53",
       "bytes": 1849823
+    },
+    {
+      "id": "78f1cbed42c1",
+      "originalName": "IMG_20180204_022210-upraveno.jpg",
+      "addedAt": "2026-09-28T22:48:28.843Z",
+      "takenAt": "2018-02-04T02:22:11",
+      "title": "",
+      "description": "",
+      "location": "Kyoto, Japan",
+      "keywords": [],
+      "collections": [
+        "c36sy74ah7m"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/1090 s",
+        "iso": "ISO 100"
+      },
+      "width": 4003,
+      "height": 2391,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#726c71",
+      "bytes": 1221735
+    },
+    {
+      "id": "cbe4bb484ba3",
+      "originalName": "IMG_20180204_055045.jpg",
+      "addedAt": "2026-09-28T22:48:28.903Z",
+      "takenAt": "2018-02-04T04:50:45",
+      "title": "",
+      "description": "",
+      "location": "Kyoto, Japan",
+      "keywords": [],
+      "collections": [
+        "c36sy74ah7m"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/33 s",
+        "iso": "ISO 200"
+      },
+      "width": 2445,
+      "height": 3410,
+      "widths": [
+        480,
+        960,
+        1721
+      ],
+      "format": "webp",
+      "color": "#8d5c57",
+      "bytes": 1676976
+    },
+    {
+      "id": "c3c7d619f681",
+      "originalName": "IMG_20180205_021035.jpg",
+      "addedAt": "2026-09-28T22:48:31.293Z",
+      "takenAt": "2018-02-05T01:10:35",
+      "title": "",
+      "description": "",
+      "location": "Kyoto, Japan",
+      "keywords": [],
+      "collections": [
+        "c36sy74ah7m"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/50 s",
+        "iso": "ISO 160"
+      },
+      "width": 4372,
+      "height": 2319,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#594333",
+      "bytes": 792550
+    },
+    {
+      "id": "127c1760a5d1",
+      "originalName": "IMG_20180205_030835.jpg",
+      "addedAt": "2026-09-28T22:48:34.033Z",
+      "takenAt": "2018-02-05T02:08:35",
+      "title": "",
+      "description": "",
+      "location": "Kyoto, Japan",
+      "keywords": [],
+      "collections": [
+        "c36sy74ah7m"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/840 s",
+        "iso": "ISO 100"
+      },
+      "width": 2610,
+      "height": 4640,
+      "widths": [
+        480,
+        960,
+        1350
+      ],
+      "format": "webp",
+      "color": "#796d74",
+      "bytes": 985987
+    },
+    {
+      "id": "fa114358af44",
+      "originalName": "IMG_20180206_035405.jpg",
+      "addedAt": "2026-09-28T22:48:34.631Z",
+      "takenAt": "2018-02-05T18:54:05",
+      "title": "",
+      "description": "",
+      "location": "Kyoto, Japan",
+      "keywords": [],
+      "collections": [
+        "c36sy74ah7m"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/791 s",
+        "iso": "ISO 100"
+      },
+      "width": 2610,
+      "height": 4640,
+      "widths": [
+        480,
+        960,
+        1350
+      ],
+      "format": "webp",
+      "color": "#6a6360",
+      "bytes": 1113036
+    },
+    {
+      "id": "e3bffb5278c7",
+      "originalName": "IMG_20180206_083707.jpg",
+      "addedAt": "2026-09-28T22:48:37.274Z",
+      "takenAt": "2018-02-06T07:37:07",
+      "title": "",
+      "description": "",
+      "location": "Kyoto, Japan",
+      "keywords": [],
+      "collections": [
+        "c36sy74ah7m"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/520 s",
+        "iso": "ISO 100"
+      },
+      "width": 4640,
+      "height": 2610,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#757266",
+      "bytes": 1718137
+    },
+    {
+      "id": "c38604879370",
+      "originalName": "IMG_20180209_062737.jpg",
+      "addedAt": "2026-09-28T22:48:37.624Z",
+      "takenAt": "2018-02-09T05:27:37",
+      "title": "",
+      "description": "",
+      "location": "Kyoto, Japan",
+      "keywords": [],
+      "collections": [
+        "c36sy74ah7m"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/1680 s",
+        "iso": "ISO 125"
+      },
+      "width": 4640,
+      "height": 2610,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#7b786b",
+      "bytes": 1161680
+    },
+    {
+      "id": "3ade58c84407",
+      "originalName": "IMG_20180209_093646-upraveno.jpg",
+      "addedAt": "2026-09-28T22:48:40.276Z",
+      "takenAt": "2018-02-09T09:36:47",
+      "title": "",
+      "description": "",
+      "location": "Kyoto, Japan",
+      "keywords": [],
+      "collections": [
+        "c36sy74ah7m"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/50 s",
+        "iso": "ISO 160"
+      },
+      "width": 4640,
+      "height": 2610,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#5c6d6d",
+      "bytes": 1680052
     }
   ],
   "redirects": {}
