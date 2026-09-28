@@ -101,6 +101,14 @@
       "group": "Germany"
     },
     {
+      "id": "cwcpv73i7mb",
+      "slug": "florence",
+      "title": "Florence",
+      "description": "",
+      "coverId": "",
+      "group": "Italy"
+    },
+    {
       "id": "cvqua4pkgsc",
       "slug": "animals",
       "title": "Animals",
@@ -143,12 +151,28 @@
       "group": "Slovakia"
     },
     {
+      "id": "c46eh97kylr",
+      "slug": "barcelona",
+      "title": "Barcelona",
+      "description": "",
+      "coverId": "",
+      "group": "Spain"
+    },
+    {
       "id": "cvc75afe7a0",
       "slug": "stockholm",
       "title": "Stockholm",
       "description": "",
       "coverId": "",
       "group": "Sweden"
+    },
+    {
+      "id": "cxy6ytqgonm",
+      "slug": "new-york",
+      "title": "New York",
+      "description": "",
+      "coverId": "",
+      "group": "USA"
     }
   ],
   "photos": [
@@ -2453,6 +2477,448 @@
       "sourceHash": "c6c2e0396412",
       "version": 2,
       "replacedAt": "2026-09-27T22:18:13.207Z"
+    },
+    {
+      "id": "ffc653535fdb",
+      "originalName": "FBC building, New York.jpg",
+      "addedAt": "2026-09-28T21:54:33.705Z",
+      "takenAt": "2015-11-23T20:31:33",
+      "title": "Federal Bureau of Control",
+      "description": "",
+      "location": "New York, USA",
+      "keywords": [],
+      "collections": [
+        "cxy6ytqgonm"
+      ],
+      "exif": {
+        "camera": "Apple iPad",
+        "lens": "iPad back camera 4.28mm f/2.4",
+        "focal": "4 mm",
+        "aperture": "f/2.4",
+        "shutter": "1/190 s",
+        "iso": "ISO 50"
+      },
+      "width": 1936,
+      "height": 2592,
+      "widths": [
+        480,
+        960,
+        1793
+      ],
+      "format": "webp",
+      "color": "#787878",
+      "bytes": 721399
+    },
+    {
+      "id": "3fe3606064fd",
+      "originalName": "IMG_1965.jpg",
+      "addedAt": "2026-09-28T21:54:33.806Z",
+      "takenAt": "2015-11-21T14:49:41",
+      "title": "",
+      "description": "",
+      "location": "New York, USA",
+      "keywords": [],
+      "collections": [
+        "cxy6ytqgonm"
+      ],
+      "exif": {
+        "camera": "Apple iPad",
+        "lens": "iPad back camera 4.28mm f/2.4",
+        "focal": "4 mm",
+        "aperture": "f/2.4",
+        "shutter": "1/500 s",
+        "iso": "ISO 50"
+      },
+      "width": 1936,
+      "height": 2592,
+      "widths": [
+        480,
+        960,
+        1793
+      ],
+      "format": "webp",
+      "color": "#585858",
+      "bytes": 1035802
+    },
+    {
+      "id": "bb7ab058ec4a",
+      "originalName": "IMG_1966.jpg",
+      "addedAt": "2026-09-28T21:54:35.673Z",
+      "takenAt": "2015-11-21T14:56:16",
+      "title": "",
+      "description": "",
+      "location": "New York, USA",
+      "keywords": [],
+      "collections": [
+        "cxy6ytqgonm"
+      ],
+      "exif": {
+        "camera": "Apple iPad",
+        "lens": "iPad back camera 4.28mm f/2.4",
+        "focal": "4 mm",
+        "aperture": "f/2.4",
+        "shutter": "1/1300 s",
+        "iso": "ISO 50"
+      },
+      "width": 1936,
+      "height": 2592,
+      "widths": [
+        480,
+        960,
+        1793
+      ],
+      "format": "webp",
+      "color": "#5c5c5c",
+      "bytes": 963429
+    },
+    {
+      "id": "196a4eaebdef",
+      "originalName": "IMG_1968.jpg",
+      "addedAt": "2026-09-28T21:54:36.244Z",
+      "takenAt": "2015-11-21T16:06:21",
+      "title": "",
+      "description": "",
+      "location": "New York, USA",
+      "keywords": [],
+      "collections": [
+        "cxy6ytqgonm"
+      ],
+      "exif": {
+        "camera": "Apple iPad",
+        "lens": "iPad back camera 4.28mm f/2.4",
+        "focal": "4 mm",
+        "aperture": "f/2.4",
+        "shutter": "1/1300 s",
+        "iso": "ISO 50"
+      },
+      "width": 2592,
+      "height": 1936,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#8a8a8a",
+      "bytes": 1603380
+    },
+    {
+      "id": "4740da5dbdfe",
+      "originalName": "IMG_2020-upraveno.jpg",
+      "addedAt": "2026-09-28T21:54:37.871Z",
+      "takenAt": "2015-11-25T16:40:44",
+      "title": "",
+      "description": "",
+      "location": "New York, USA",
+      "keywords": [],
+      "collections": [
+        "cxy6ytqgonm"
+      ],
+      "exif": {
+        "camera": "Apple iPad",
+        "lens": "iPad back camera 4.28mm f/2.4",
+        "focal": "4 mm",
+        "aperture": "f/2.4",
+        "shutter": "1/40 s",
+        "iso": "ISO 50"
+      },
+      "width": 2592,
+      "height": 1936,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#7e7e7e",
+      "bytes": 554115
+    },
+    {
+      "id": "1e23b89bead3",
+      "originalName": "QPSI0552.jpg",
+      "addedAt": "2026-09-28T21:54:38.803Z",
+      "takenAt": "2015-11-21T13:36:24",
+      "title": "",
+      "description": "",
+      "location": "New York, USA",
+      "keywords": [],
+      "collections": [
+        "cxy6ytqgonm"
+      ],
+      "exif": {
+        "camera": "Apple iPad",
+        "lens": "iPad back camera 4.28mm f/2.4",
+        "focal": "4 mm",
+        "aperture": "f/2.4",
+        "shutter": "1/300 s",
+        "iso": "ISO 50"
+      },
+      "width": 1924,
+      "height": 1924,
+      "widths": [
+        480,
+        960,
+        1600,
+        1924
+      ],
+      "format": "webp",
+      "color": "#676767",
+      "bytes": 1933364
+    },
+    {
+      "id": "98bfc3a1a753",
+      "originalName": "WP_20151121_011.jpg",
+      "addedAt": "2026-09-28T21:54:39.056Z",
+      "takenAt": "2015-11-21T13:19:42",
+      "title": "",
+      "description": "",
+      "location": "New York, USA",
+      "keywords": [],
+      "collections": [
+        "cxy6ytqgonm"
+      ],
+      "exif": {
+        "camera": "Nokia Lumia 720",
+        "lens": "-- mm f/--",
+        "focal": "",
+        "aperture": "f/1.9",
+        "shutter": "1/140 s",
+        "iso": "ISO 100"
+      },
+      "width": 1607,
+      "height": 1368,
+      "widths": [
+        480,
+        960,
+        1607
+      ],
+      "format": "webp",
+      "color": "#777777",
+      "bytes": 785627
+    },
+    {
+      "id": "9dbc19739106",
+      "originalName": "WP_20151125_004-upraveno.jpg",
+      "addedAt": "2026-09-28T21:54:41.302Z",
+      "takenAt": "2015-11-25T13:29:36",
+      "title": "",
+      "description": "",
+      "location": "New York, USA",
+      "keywords": [],
+      "collections": [
+        "cxy6ytqgonm"
+      ],
+      "exif": {
+        "camera": "Apple iPad",
+        "lens": "iPad back camera 4.28mm f/2.4",
+        "focal": "4 mm",
+        "aperture": "f/2.4",
+        "shutter": "1/4300 s",
+        "iso": "ISO 50"
+      },
+      "width": 2592,
+      "height": 1936,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#a3a3a3",
+      "bytes": 1391831
+    },
+    {
+      "id": "0bc6947053db",
+      "originalName": "IMG_20191021_145733-upraveno 1 1.jpg",
+      "addedAt": "2026-09-28T21:58:35.023Z",
+      "takenAt": "2019-10-21T14:57:34",
+      "title": "Cathedral of Santa Maria del Fiore",
+      "description": "shot from Piazza di San Giovanni",
+      "location": "Florence, Italy",
+      "keywords": [],
+      "collections": [
+        "cwcpv73i7mb"
+      ],
+      "exif": {
+        "camera": "ONEPLUS A3003",
+        "lens": "-- mm f/--",
+        "focal": "4 mm",
+        "aperture": "f/2",
+        "shutter": "1/450 s",
+        "iso": "ISO 100"
+      },
+      "width": 2107,
+      "height": 3746,
+      "widths": [
+        480,
+        960,
+        1350
+      ],
+      "format": "webp",
+      "color": "#767676",
+      "bytes": 1151888
+    },
+    {
+      "id": "980628d34869",
+      "originalName": "DSCF1266.jpg",
+      "addedAt": "2026-09-28T22:00:28.243Z",
+      "takenAt": "2022-05-08T19:39:40",
+      "title": "",
+      "description": "",
+      "location": "Barcelona, Spain",
+      "keywords": [],
+      "collections": [
+        "c46eh97kylr"
+      ],
+      "exif": {
+        "camera": "Fujifilm X-T30 II",
+        "lens": "18.0-55.0 mm f/2.8-4.0",
+        "focal": "55 mm",
+        "aperture": "f/4",
+        "shutter": "1/1250 s",
+        "iso": "ISO 640"
+      },
+      "width": 1638,
+      "height": 2048,
+      "widths": [
+        480,
+        960,
+        1638
+      ],
+      "format": "webp",
+      "color": "#4f4538",
+      "bytes": 1351073
+    },
+    {
+      "id": "b6e25fc30fb6",
+      "originalName": "DSCF1254.jpg",
+      "addedAt": "2026-09-28T22:00:28.571Z",
+      "takenAt": "2022-05-08T19:37:56",
+      "title": "",
+      "description": "",
+      "location": "Barcelona, Spain",
+      "keywords": [],
+      "collections": [
+        "c46eh97kylr"
+      ],
+      "exif": {
+        "camera": "Fujifilm X-T30 II",
+        "lens": "18.0-55.0 mm f/2.8-4.0",
+        "focal": "55 mm",
+        "aperture": "f/4",
+        "shutter": "1/800 s",
+        "iso": "ISO 640"
+      },
+      "width": 2151,
+      "height": 1536,
+      "widths": [
+        480,
+        960,
+        1600,
+        2151
+      ],
+      "format": "webp",
+      "color": "#756c5c",
+      "bytes": 1412071
+    },
+    {
+      "id": "70f661e293b8",
+      "originalName": "DSCF1267.jpg",
+      "addedAt": "2026-09-28T22:00:30.331Z",
+      "takenAt": "2022-05-08T19:39:41",
+      "title": "",
+      "description": "",
+      "location": "Barcelona, Spain",
+      "keywords": [],
+      "collections": [
+        "c46eh97kylr"
+      ],
+      "exif": {
+        "camera": "Fujifilm X-T30 II",
+        "lens": "18.0-55.0 mm f/2.8-4.0",
+        "focal": "55 mm",
+        "aperture": "f/4",
+        "shutter": "1/1250 s",
+        "iso": "ISO 640"
+      },
+      "width": 2731,
+      "height": 1536,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#6f624f",
+      "bytes": 1200546
+    },
+    {
+      "id": "b31ed90e2db9",
+      "originalName": "DSCF1286.jpg",
+      "addedAt": "2026-09-28T22:00:30.773Z",
+      "takenAt": "2022-05-08T19:51:59",
+      "title": "",
+      "description": "",
+      "location": "Barcelona, Spain",
+      "keywords": [],
+      "collections": [
+        "c46eh97kylr"
+      ],
+      "exif": {
+        "camera": "Fujifilm X-T30 II",
+        "lens": "18.0-55.0 mm f/2.8-4.0",
+        "focal": "55 mm",
+        "aperture": "f/4",
+        "shutter": "1/4000 s",
+        "iso": "ISO 640"
+      },
+      "width": 2560,
+      "height": 1536,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#95927f",
+      "bytes": 1574880
+    },
+    {
+      "id": "a83ca5690907",
+      "originalName": "DSCF1353.jpg",
+      "addedAt": "2026-09-28T22:00:33.287Z",
+      "takenAt": "2022-05-09T19:56:50",
+      "title": "",
+      "description": "",
+      "location": "Barcelona, Spain",
+      "keywords": [],
+      "collections": [
+        "c46eh97kylr"
+      ],
+      "exif": {
+        "camera": "Fujifilm X-T30 II",
+        "lens": "18.0-55.0 mm f/2.8-4.0",
+        "focal": "30 mm",
+        "aperture": "f/4",
+        "shutter": "1/2000 s",
+        "iso": "ISO 640"
+      },
+      "width": 3937,
+      "height": 2362,
+      "widths": [
+        480,
+        960,
+        1600,
+        2400
+      ],
+      "format": "webp",
+      "color": "#7a6a53",
+      "bytes": 1849823
     }
   ],
   "redirects": {}

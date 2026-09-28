@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Barcelona · Martin Porter</title>
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Barcelona · Martin Porter">
+    <meta property="og:description" content="5 photos">
+    <meta name="description" content="5 photos">
+    <meta property="og:url" content="https://foto.martinposta.com/collections/barcelona/">
+    <link rel="canonical" href="https://foto.martinposta.com/collections/barcelona/">
+    <meta property="og:image" content="https://foto.martinposta.com/img/a83ca5690907/og.jpg?v=1">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="720">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="color-scheme" content="light dark">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='8' width='26' height='19' rx='4' fill='%23111'/%3E%3Crect x='11' y='4' width='10' height='6' rx='2' fill='%23111'/%3E%3Ccircle cx='16' cy='17.5' r='5.5' fill='%23fff'/%3E%3Ccircle cx='16' cy='17.5' r='3' fill='%23111'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="../../assets/style.css?v=5f205f880e">
+</head>
+<body data-root="../../" data-v="5f205f880e" data-page="{&quot;view&quot;:&quot;collection&quot;,&quot;slug&quot;:&quot;barcelona&quot;}">
+    <header class="profile wrap" id="profile"></header>
+
+    <nav class="bar" id="bar" aria-label="Filtry">
+        <div class="bar-inner wrap">
+            <div class="tabs" role="tablist">
+                <a class="tab" data-nav data-tab="photos" href="../../">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1Zm-1 12.6-4.3-4.3-3.2 3.2-2.3-2.3L5 17.4V6h14v10.6ZM8.5 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>
+                    <span>Photos</span> <span class="count" id="count-photos"></span>
+                </a>
+                <a class="tab" data-nav data-tab="collections" href="../../collections/">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h14v13H3zM7 3h14v13h-2V5H7z"/></svg>
+                    <span>Collections</span> <span class="count" id="count-collections"></span>
+                </a>
+            </div>
+            <div class="chips-wrap" id="chips-wrap">
+                <button class="chip-arrow prev" id="chips-prev" tabindex="-1" aria-label="Scroll left">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.4 5.4 14 4l-8 8 8 8 1.4-1.4L8.8 12z"/></svg>
+                </button>
+                <div class="chips" id="chips"></div>
+                <button class="chip-arrow next" id="chips-next" tabindex="-1" aria-label="Scroll right">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 5.4 10 4l8 8-8 8-1.4-1.4 6.6-6.6z"/></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="wrap" id="main">
+        <section class="coll-head" id="coll-head" hidden></section>
+        <div class="grid" id="grid" aria-live="polite"></div>
+        <div class="sentinel" id="sentinel"></div>
+        <div class="collections" id="collections" hidden></div>
+        <p class="empty" id="empty" hidden>No photos yet.</p>
+    </main>
+
+    <footer class="foot wrap" id="foot"></footer>
+
+    <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Photo">
+        <div class="lb-top">
+            <span class="lb-count" id="lb-count"></span>
+            <div class="lb-actions">
+                <button class="icon-btn" id="lb-info-btn" title="Caption (I)" aria-label="Show or hide caption" aria-pressed="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm-1-9h2v6h-2zm0-4h2v2h-2z"/></svg>
+                </button>
+                <button class="icon-btn" id="lb-full" title="Full screen (F)" aria-label="Full screen">
+                    <svg class="ico-enter" viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>
+                    <svg class="ico-exit" viewBox="0 0 24 24"><path d="M8 4h2v6H4V8h4zm6 0h2v4h4v2h-6zM4 14h6v6H8v-4H4zm10 0h6v2h-4v4h-2z"/></svg>
+                </button>
+                <button class="icon-btn" id="lb-share" title="Share link" aria-label="Share link">
+                    <svg viewBox="0 0 24 24"><path d="M18 16a3 3 0 0 0-2.4 1.2l-6.7-3.4a3 3 0 0 0 0-1.6l6.7-3.4A3 3 0 1 0 15 7l-6.7 3.4a3 3 0 1 0 0 3.2L15 17a3 3 0 1 0 3-1Z"/></svg>
+                </button>
+                <button class="icon-btn" id="lb-close" title="Close (Esc)" aria-label="Close">
+                    <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="lb-stage" id="lb-stage">
+            <button class="lb-nav prev" id="lb-prev" aria-label="Previous">
+                <svg viewBox="0 0 24 24"><path d="M15.4 5.4 14 4l-8 8 8 8 1.4-1.4L8.8 12z"/></svg>
+            </button>
+            <img id="lb-img" alt="">
+            <button class="lb-nav next" id="lb-next" aria-label="Next">
+                <svg viewBox="0 0 24 24"><path d="M8.6 5.4 10 4l8 8-8 8-1.4-1.4 6.6-6.6z"/></svg>
+            </button>
+        </div>
+        <div class="lb-info" id="lb-info"></div>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+
+    <script src="../../assets/app.js?v=5f205f880e"></script>
+<script>if(!/^(localhost|127\.|\[::1\])/.test(location.hostname)){var s=document.createElement('script');s.defer=true;s.src='https://static.cloudflareinsights.com/beacon.min.js';s.setAttribute('data-cf-beacon',"{\"token\":\"ea2d251fdbe7427aa2f47897ef5440a0\",\"spa\":true}");document.head.appendChild(s)}</script>
+</body>
+</html>
