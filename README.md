@@ -112,7 +112,7 @@ Pokud je portfolio v repu s jiným názvem, tohle nefunguje. Pak použij variant
    - **Použít jako náhled webu** vybere obrázek, který se ukáže při sdílení odkazu na celou galerii.
    - **Nahradit soubor…** nahraje upravenou verzi fotky (třeba po nových barevných korekcích nebo ořezu v Capture One) místo původní. Název, popis, kolekce i odkaz na fotku zůstanou. Novou verzi můžeš i přetáhnout na náhled v editoru.
 4. **Náhled webu ↗** pro kontrolu
-5. **Publikovat na GitHub**. Za minutu je změna online.
+5. **Publikovat na GitHub**. Dialog nejdřív ukáže, co se na webu změní: nové fotky, upravené texty, kolekce, pořadí a nastavení, proti tomu, co je na GitHubu. Klik na náhled otevře tu fotku. Za minutu po odeslání je změna online.
 
 **Tip:** Pokud vyplňuješ název a popis už v Lightroomu, darktable, digiKamu nebo ve Windows (Vlastnosti → Podrobnosti), admin si je při nahrání načte sám.
 
@@ -156,6 +156,7 @@ Galerie už na GitHubu je, takže se na další počítač **naklonuje**, nezakl
    Poslední dva řádky jsou důležité. Bez nich by git podepsal commity e-mailem z nastavení Windows a GitHub by publikování odmítl (blokování osobního e-mailu).
 3. Dvojklik na **`Galerie.cmd`**. Při prvním spuštění se nainstalují závislosti (asi minutu) a otevře se admin.
 4. Při prvním *Publikovat* se otevře okno pro přihlášení ke GitHubu (Git Credential Manager). Přihlas se, Git si to zapamatuje.
+   Když se místo okna objeví „Invalid username or token. Password authentication is not supported“, Git se ptal na heslo, a to GitHub nebere. Ve *Správci pověření* (Přihlašovací údaje systému Windows) smaž položku `git:https://github.com`, spusť `git config --global credential.helper manager` a v PowerShellu ve složce galerie `git push`. Otevře se přihlášení v prohlížeči. Heslo ke GitHubu do příkazové řádky nikdy nepiš.
 
 Na tomhle počítači pak uvidíš všechno publikované. **Koncepty z Macu tu nebudou**, zůstávají tam, kde vznikly. Originály fotek admin nepotřebuje.
 

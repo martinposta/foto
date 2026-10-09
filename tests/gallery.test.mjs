@@ -17,6 +17,7 @@ import exifr from 'exifr';
 import { readMetadata, targetWidths } from '../lib/images.mjs';
 import { orderedPhotos, reorder } from '../lib/order.mjs';
 import { mergeGallery } from '../lib/merge.mjs';
+import { diffGallery } from '../lib/changes.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 4399;
@@ -1003,6 +1004,89 @@ test('sync on start: a freshly started admin catches up with what another copy p
     srv.kill();
     await sleep(200);
   }
+});
+
+test('changes: preview shows only what this copy would publish, not drafts or what GitHub got meanwhile', async () => {
+  // Catch up (also reloads the memory after the earlier tests reset files under the admin), then
+  // another copy publishes: GitHub is one ahead, and that must not look like this copy undoing it.
+  // (The sync test reset the files to GitHub's "Konflikt tam" under a running admin; put its memory back in step.)
+  const stale = (await api('GET', '/api/state')).json.data.photos.find(p => p.title === 'Konflikt tady');
+  if (stale) await api('PATCH', `/api/photos/${stale.id}`, { title: 'Konflikt tam' });
+  await settle();
+  let r = await api('POST', '/api/sync/check', {});
+  r = await api('POST', '/api/sync', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  const other = await otherClone('other');
+  const { photos: onGitHub } = JSON.parse(await fs.readFile(path.join(other, 'data', 'gallery.json'), 'utf8'));
+  await otherPublishes(other, d => { d.photos.find(p => p.id === onGitHub[0].id).location = 'Odjinud'; }, 'other: location');
+  r = await api('POST', '/api/sync/check', {});
+  assert.equal(r.json.behind, 1);
+  r = await api('GET', '/api/changes');
+  assert.equal(r.status, 200);
+  assert.equal(r.json.count, 0, 'the other copy\'s edit is not shown as undone here: ' + JSON.stringify(r.json));
+
+  const { json: st } = await api('GET', '/api/state');
+  const pub = st.data.photos.find(p => !p.draft && p.id !== onGitHub[0].id);
+  await api('PATCH', `/api/photos/${pub.id}`, { description: 'Nový popis z náhledu' });
+  const { json: up } = await api('POST', '/api/upload?name=preview.jpg', undefined, await makeJpeg({ w: 900, h: 600, color: '#06d6a0' }));
+  await settle();
+  r = await api('GET', '/api/changes');
+  assert.equal(r.json.count, 1, JSON.stringify(r.json));
+  assert.deepEqual(r.json.photos.added, [], 'a draft is not part of the publish');
+  assert.equal(r.json.photos.edited[0].id, pub.id);
+  assert.deepEqual(r.json.photos.edited[0].fields, [{ label: 'Popis', from: pub.description || '', to: 'Nový popis z náhledu' }]);
+
+  await api('POST', '/api/drafts/publish', { ids: [up.photo.id] });
+  r = await api('GET', '/api/changes');
+  assert.deepEqual(r.json.photos.added.map(p => p.id), [up.photo.id]);
+
+  r = await api('POST', '/api/publish', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  r = await api('GET', '/api/changes');
+  assert.equal(r.json.count, 0, 'after publishing GitHub has it all');
+});
+
+test('changes (lib): photos, collections, order and settings in the owner\'s terms', () => {
+  const ph = (id, extra = {}) => ({ id, title: '', description: '', location: '', takenAt: '', collections: [], ...extra });
+  const before = {
+    settings: { name: 'A', order: ['p1', 'p2', 'p3'], contact: { user: 'a', domain: 'b.cz' } },
+    collections: [{ id: 'c1', slug: 'italy', title: 'Italy', group: '' }, { id: 'c2', slug: 'old', title: 'Old' }],
+    photos: [ph('p1', { title: 'Florence', collections: ['c1'] }), ph('p2', { location: 'Rome' }), ph('p3', { originalName: 'X.jpg' })],
+  };
+  const after = structuredClone(before);
+  after.photos = after.photos.filter(p => p.id !== 'p3');                        // removed
+  after.photos.push(ph('p4', { title: 'New' }));                                 // added
+  Object.assign(after.photos[0], { title: 'Firenze', collections: ['c3'], version: 2, color: '#000' });
+  after.photos[1].takenAt = '2024-05-01T10:00:00';
+  after.collections = [{ id: 'c1', slug: 'italia', title: 'Italy', group: 'Europe', starred: true, coverId: 'p1' },
+    { id: 'c3', slug: 'new', title: 'New one' }];
+  after.settings.order = ['p2', 'p4', 'p1'];
+  after.settings.contact = { user: 'x', domain: 'b.cz' };
+
+  const ch = diffGallery(before, after);
+  assert.deepEqual(ch.photos.added, [{ id: 'p4', label: 'New' }]);
+  assert.deepEqual(ch.photos.removed, [{ id: 'p3', label: 'X.jpg' }]);
+  assert.deepEqual(ch.photos.edited, [
+    { id: 'p1', label: 'Firenze', fields: [
+      { label: 'Název', from: 'Florence', to: 'Firenze' },
+      { label: 'Kolekce', added: ['New one'], removed: ['Italy'] },
+      { label: 'Nahrazená fotka' }] },
+    { id: 'p2', label: 'Rome', fields: [{ label: 'Datum pořízení', from: '', to: '2024-05-01 10:00:00' }] },
+  ], 'colour is derived and not reported');
+  assert.deepEqual(ch.collections.added, [{ id: 'c3', label: 'New one' }]);
+  assert.deepEqual(ch.collections.removed, [{ id: 'c2', label: 'Old' }]);
+  assert.deepEqual(ch.collections.edited[0].fields, [
+    { label: 'Skupina', from: '', to: 'Europe' }, { label: 'Adresa', from: 'italy', to: 'italia' },
+    { label: 'Zvýrazněná', from: 'ne', to: 'ano' }, { label: 'Titulní fotka' }]);
+  assert.deepEqual(ch.order, ['Vše'], 'p2 now stands before p1');
+  assert.deepEqual(ch.settings, [{ label: 'Kontaktní e-mail' }], 'the address itself is not echoed');
+
+  // Adding or removing a photo alone does not count as reordering.
+  const b2 = { settings: { order: ['p1', 'p2'] }, collections: [], photos: [ph('p1'), ph('p2')] };
+  const a2 = { settings: { order: ['p3', 'p1'] }, collections: [], photos: [ph('p1'), ph('p3')] };
+  assert.deepEqual(diffGallery(b2, a2).order, []);
+  // Nothing published yet: everything is new.
+  assert.equal(diffGallery(null, a2).photos.added.length, 2);
 });
 
 test('merge (lib): gallery.json three-way by record and field', () => {

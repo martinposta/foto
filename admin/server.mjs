@@ -11,10 +11,11 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { ADMIN, IMAGE, PATHS, DATA_ROOT } from '../lib/config.mjs';
-import { loadData, reloadData } from '../lib/store.mjs';
+import { loadData, reloadData, publishedPart } from '../lib/store.mjs';
 import { buildSite } from '../lib/build.mjs';
 import * as G from '../lib/gallery.mjs';
-import { configureGit, gitStatus, gitBusy, fetchRemote, syncPull, startupSync, publish } from './git.mjs';
+import { configureGit, gitStatus, gitBusy, fetchRemote, syncPull, startupSync, publish, publishedBaseline } from './git.mjs';
+import { diffGallery } from '../lib/changes.mjs';
 
 const MAX_UPLOAD = 120 * 1024 * 1024;
 const ORIGINS = new Set([`http://localhost:${ADMIN.port}`, `http://127.0.0.1:${ADMIN.port}`]);
@@ -96,6 +97,10 @@ async function api(req, res, url) {
   if (m === 'GET' && p === '/api/git') {
     await buildPromise;
     return send(res, 200, await gitStatus());
+  }
+  // Preview before publishing: what the next publish changes on the web, against GitHub's copy.
+  if (m === 'GET' && p === '/api/changes') {
+    return send(res, 200, diffGallery(await publishedBaseline(), publishedPart(await loadData())));
   }
   // Sync with GitHub (D25). check = fetch only; sync = fast-forward when nothing is unpublished.
   if (m === 'POST' && p === '/api/sync/check') {

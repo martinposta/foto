@@ -7,6 +7,8 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const plural = (n, one, few, many) => `${n} ${n === 1 ? one : n > 1 && n < 5 ? few : many}`;
   const photosLabel = n => plural(n, 'fotka', 'fotky', 'fotek');
+  const photosAcc = n => plural(n, 'fotku', 'fotky', 'fotek'); // "Potvrdit 1 fotku"
+
 
   const S = {
     data: null,
@@ -1023,10 +1025,50 @@
       };
     modal('Publikovat na GitHub', `
       <div class="field"><label for="p-msg">Popis změny (nepovinné)</label><input type="text" id="p-msg" placeholder="např. Nové fotky ze Šumavy"></div>
-      ${nd ? `<p class="help">Máš <b>${photosLabel(nd)} v konceptech</b>. Ty se bez potvrzení na GitHub nepošlou.</p>` : ''}
+      <div id="p-changes" class="changes"><p class="help">Zjišťuji, co se na webu změní…</p></div>
       ${warn}<div id="p-log"></div>`,
-      nd ? [['Zavřít', 'ghost'], ['Publikovat bez konceptů', '', run(false)], [`Potvrdit ${photosLabel(nd)} a publikovat`, 'primary', run(true)]]
+      nd ? [['Zavřít', 'ghost'], ['Publikovat bez konceptů', '', run(false)], [`Potvrdit ${photosAcc(nd)} a publikovat`, 'primary', run(true)]]
          : [['Zavřít', 'ghost'], ['Publikovat', 'primary', run(false)]]);
+    api('GET', '/api/changes').then(renderChanges, e => { $('p-changes').innerHTML = `<p class="help">Změny se nepodařilo zjistit: ${esc(e.message)}</p>`; });
+  });
+
+  // Preview of what the publish changes on the web, compared with GitHub's copy (/api/changes).
+  // Drafts are listed apart: they only go along with "Potvrdit … a publikovat".
+  function renderChanges(ch) {
+    const box = $('p-changes');
+    if (!box) return; // dialog closed meanwhile
+    const mini = id => { const p = photoById(id); return p ? `<button class="ch-thumb" data-goto="${p.id}" title="${esc(p.title || p.location || p.originalName)}" style="background:${p.color}"><img src="${thumbUrl(p, 300)}" alt="" loading="lazy"></button>` : ''; };
+    const field = f => f.added || f.removed
+      ? `<li><span class="ch-label">${esc(f.label)}:</span> ${[...f.added.map(t => `<ins>+ ${esc(t)}</ins>`), ...f.removed.map(t => `<del>− ${esc(t)}</del>`)].join(' ')}</li>`
+      : 'from' in f
+        ? `<li><span class="ch-label">${esc(f.label)}:</span> ${f.from ? `<del>${esc(f.from)}</del> → ` : ''}${f.to ? `<ins>${esc(f.to)}</ins>` : '<i>(smazáno)</i>'}</li>`
+        : `<li><span class="ch-label">${esc(f.label)}</span> změněno</li>`;
+    const section = (title, items, body) => items.length ? `<h3>${title} <span class="n">${items.length}</span></h3>${body}` : '';
+    const names = list => `<p class="ch-names">${list.map(c => esc(c.label)).join(', ')}</p>`;
+    const edited = list => `<ul class="ch-edited">${list.map(e => `<li>${e.id && photoById(e.id) ? mini(e.id) : ''}<div><b>${esc(e.label)}</b><ul>${e.fields.map(field).join('')}</ul></div></li>`).join('')}</ul>`;
+    const drafts = photos().filter(p => p.draft);
+    const g = S.git || {};
+    let html = ch.count ? '' : `<p class="help">${g.changes || g.ahead ? 'Obsah galerie se nemění, odešle se jen přegenerovaný web.' : 'Na GitHubu už všechno je, není co odeslat.'}</p>`;
+    html += section('Nové fotky', ch.photos.added, `<div class="ch-grid">${ch.photos.added.map(p => mini(p.id)).join('')}</div>`);
+    html += section('Upravené fotky', ch.photos.edited, edited(ch.photos.edited));
+    html += section('Zmizí z webu', ch.photos.removed, `<div class="ch-grid">${ch.photos.removed.map(p => mini(p.id) || `<span class="ch-gone">${esc(p.label)}</span>`).join('')}</div>`);
+    html += section('Nové kolekce', ch.collections.added, names(ch.collections.added));
+    html += section('Upravené kolekce', ch.collections.edited, edited(ch.collections.edited));
+    html += section('Kolekce zmizí z webu', ch.collections.removed, names(ch.collections.removed));
+    html += section('Změněné pořadí', ch.order, `<p class="ch-names">${ch.order.map(esc).join(', ')}</p>`);
+    html += section('Nastavení', ch.settings, `<ul class="ch-edited"><li><div><ul>${ch.settings.map(field).join('')}</ul></div></li></ul>`);
+    if (drafts.length) html += `<h3>V konceptech <span class="n">${drafts.length}</span></h3><p class="help">Na GitHub se pošlou, jen když zvolíš <b>Potvrdit ${photosAcc(drafts.length)} a publikovat</b>.</p><div class="ch-grid is-draft">${drafts.map(p => mini(p.id)).join('')}</div>`;
+    box.innerHTML = html;
+  }
+  // A thumbnail in the preview opens that photo in the panel (the dialog closes).
+  $('modal').addEventListener('click', e => {
+    const t = e.target.closest('[data-goto]');
+    if (!t) return;
+    $('modal').hidden = true;
+    setFilter('all');
+    S.selected.add(t.dataset.goto);
+    renderAll();
+    document.querySelector(`#thumbs .thumb[data-id="${t.dataset.goto}"]`)?.scrollIntoView({ block: 'center' });
   });
 
   // ---------- drafts ----------

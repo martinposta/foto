@@ -96,6 +96,22 @@ export async function gitStatus() {
   };
 }
 
+// ---------- what GitHub has (preview of changes) ----------
+
+/**
+ * data/gallery.json as it was when this copy and GitHub last agreed: the merge base with the
+ * upstream, which is GitHub itself when nothing new arrived. Comparing against @{u} directly would
+ * show what another copy published meanwhile as if this copy were undoing it. null = nothing has
+ * been published from here yet (no upstream), so everything counts as new.
+ */
+export async function publishedBaseline() {
+  const base = await git(['merge-base', 'HEAD', '@{u}'], { allowFail: true });
+  if (base.code !== 0 || !base.out) return null;
+  const r = await git(['show', `${base.out}:data/gallery.json`], { allowFail: true });
+  if (r.code !== 0) return null;
+  try { return JSON.parse(r.out); } catch { return null; }
+}
+
 // ---------- one git operation at a time ----------
 
 let busy = null;

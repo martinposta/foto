@@ -36,6 +36,7 @@ lib/images.mjs        sharp pipeline + exifr metadata extraction
 lib/gallery.mjs       all mutations (photos, collections, settings, avatar). UserError = 400 with Czech message
 admin/git.mjs         git status, publish (commit → fetch → rebase → push) and sync with GitHub (D25)
 lib/merge.mjs         three-way merge of data/gallery.json by record and field (used when a rebase conflicts)
+lib/changes.mjs       what the next publish changes, by record and field (preview in the publish dialog, PLAN 7c)
 lib/order.mjs         photo order of a list (automatic vs stored), reorder actions; admin.js mirrors orderedPhotos()
 lib/build.mjs         data/gallery.json + site/ template → docs/ (HTML pages, data.json, assets, CNAME, 404)
 site/                 public site SOURCE: index.html template + app.js + style.css + fonts/ (Inter, self-hosted, OFL)
