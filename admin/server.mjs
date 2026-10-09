@@ -14,7 +14,7 @@ import { ADMIN, IMAGE, PATHS, DATA_ROOT } from '../lib/config.mjs';
 import { loadData, reloadData, publishedPart } from '../lib/store.mjs';
 import { buildSite } from '../lib/build.mjs';
 import * as G from '../lib/gallery.mjs';
-import { configureGit, gitStatus, gitBusy, fetchRemote, syncPull, startupSync, publish, publishedBaseline } from './git.mjs';
+import { configureGit, gitStatus, gitBusy, fetchRemote, syncPull, startupSync, publish, publishedBaseline, discardLocal } from './git.mjs';
 import { diffGallery } from '../lib/changes.mjs';
 
 const MAX_UPLOAD = 120 * 1024 * 1024;
@@ -108,6 +108,7 @@ async function api(req, res, url) {
     return send(res, 200, await gitStatus());
   }
   if (m === 'POST' && p === '/api/sync') return send(res, 200, await syncPull());
+  if (m === 'POST' && p === '/api/discard') return send(res, 200, await discardLocal());
   if (m === 'POST' && p === '/api/publish') return send(res, 200, await publish((await readJson(req)).message));
   // While git rewrites the data files (pull, rebase), an edit would be written into the middle of
   // it and lost or mixed in. The UI waits; a stray request gets a readable refusal.
@@ -167,7 +168,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-configureGit({ buildNow, reload: reloadData });
+configureGit({ buildNow, reload: reloadData, afterDiscard: G.tidyDraftsAfterDiscard });
 // Catch up with GitHub before anything is loaded (D25): another instance may have published.
 const started = await startupSync();
 if (started.pulled) console.log(`\n  Staženo z GitHubu: ${started.pulled} ${started.pulled === 1 ? 'změna' : 'změn'}.`);

@@ -1029,14 +1029,22 @@
       ${warn}<div id="p-log"></div>`,
       nd ? [['Zavřít', 'ghost'], ['Publikovat bez konceptů', '', run(false)], [`Potvrdit ${photosAcc(nd)} a publikovat`, 'primary', run(true)]]
          : [['Zavřít', 'ghost'], ['Publikovat', 'primary', run(false)]]);
-    api('GET', '/api/changes').then(renderChanges, e => { $('p-changes').innerHTML = `<p class="help">Změny se nepodařilo zjistit: ${esc(e.message)}</p>`; });
+    loadChanges('publish');
   });
 
   // Preview of what the publish changes on the web, compared with GitHub's copy (/api/changes).
   // Drafts are listed apart: they only go along with "Potvrdit … a publikovat".
-  function renderChanges(ch) {
+  // mode 'discard' lists the same changes as what gets thrown away (menu ⋯ → Zahodit moje změny).
+  function loadChanges(mode) {
+    api('GET', '/api/changes').then(ch => renderChanges(ch, mode),
+      e => { if ($('p-changes')) $('p-changes').innerHTML = `<p class="help">Změny se nepodařilo zjistit: ${esc(e.message)}</p>`; });
+  }
+  function renderChanges(ch, mode = 'publish') {
     const box = $('p-changes');
     if (!box) return; // dialog closed meanwhile
+    const T = mode === 'discard'
+      ? { added: 'Nové fotky (smažou se)', edited: 'Úpravy fotek (vrátí se)', removed: 'Fotky, které se vrátí na web', cAdded: 'Nové kolekce (zmizí)', cEdited: 'Úpravy kolekcí (vrátí se)', cRemoved: 'Kolekce, které se vrátí', order: 'Pořadí (vrátí se)', settings: 'Nastavení (vrátí se)' }
+      : { added: 'Nové fotky', edited: 'Upravené fotky', removed: 'Zmizí z webu', cAdded: 'Nové kolekce', cEdited: 'Upravené kolekce', cRemoved: 'Kolekce zmizí z webu', order: 'Změněné pořadí', settings: 'Nastavení' };
     const mini = id => { const p = photoById(id); return p ? `<button class="ch-thumb" data-goto="${p.id}" title="${esc(p.title || p.location || p.originalName)}" style="background:${p.color}"><img src="${thumbUrl(p, 300)}" alt="" loading="lazy"></button>` : ''; };
     const field = f => f.added || f.removed
       ? `<li><span class="ch-label">${esc(f.label)}:</span> ${[...f.added.map(t => `<ins>+ ${esc(t)}</ins>`), ...f.removed.map(t => `<del>− ${esc(t)}</del>`)].join(' ')}</li>`
@@ -1046,17 +1054,19 @@
     const section = (title, items, body) => items.length ? `<h3>${title} <span class="n">${items.length}</span></h3>${body}` : '';
     const names = list => `<p class="ch-names">${list.map(c => esc(c.label)).join(', ')}</p>`;
     const edited = list => `<ul class="ch-edited">${list.map(e => `<li>${e.id && photoById(e.id) ? mini(e.id) : ''}<div><b>${esc(e.label)}</b><ul>${e.fields.map(field).join('')}</ul></div></li>`).join('')}</ul>`;
-    const drafts = photos().filter(p => p.draft);
+    const drafts = mode === 'publish' ? photos().filter(p => p.draft) : [];
     const g = S.git || {};
-    let html = ch.count ? '' : `<p class="help">${g.changes || g.ahead ? 'Obsah galerie se nemění, odešle se jen přegenerovaný web.' : 'Na GitHubu už všechno je, není co odeslat.'}</p>`;
-    html += section('Nové fotky', ch.photos.added, `<div class="ch-grid">${ch.photos.added.map(p => mini(p.id)).join('')}</div>`);
-    html += section('Upravené fotky', ch.photos.edited, edited(ch.photos.edited));
-    html += section('Zmizí z webu', ch.photos.removed, `<div class="ch-grid">${ch.photos.removed.map(p => mini(p.id) || `<span class="ch-gone">${esc(p.label)}</span>`).join('')}</div>`);
-    html += section('Nové kolekce', ch.collections.added, names(ch.collections.added));
-    html += section('Upravené kolekce', ch.collections.edited, edited(ch.collections.edited));
-    html += section('Kolekce zmizí z webu', ch.collections.removed, names(ch.collections.removed));
-    html += section('Změněné pořadí', ch.order, `<p class="ch-names">${ch.order.map(esc).join(', ')}</p>`);
-    html += section('Nastavení', ch.settings, `<ul class="ch-edited"><li><div><ul>${ch.settings.map(field).join('')}</ul></div></li></ul>`);
+    let html = ch.count ? '' : mode === 'discard'
+      ? `<p class="help">${g.changes || g.ahead ? 'Obsah galerie se nemění, zahodí se jen přegenerovaný web.' : 'Nemáš žádné nepublikované změny.'}</p>`
+      : `<p class="help">${g.changes || g.ahead ? 'Obsah galerie se nemění, odešle se jen přegenerovaný web.' : 'Na GitHubu už všechno je, není co odeslat.'}</p>`;
+    html += section(T.added, ch.photos.added, `<div class="ch-grid">${ch.photos.added.map(p => mini(p.id)).join('')}</div>`);
+    html += section(T.edited, ch.photos.edited, edited(ch.photos.edited));
+    html += section(T.removed, ch.photos.removed, `<div class="ch-grid">${ch.photos.removed.map(p => mini(p.id) || `<span class="ch-gone">${esc(p.label)}</span>`).join('')}</div>`);
+    html += section(T.cAdded, ch.collections.added, names(ch.collections.added));
+    html += section(T.cEdited, ch.collections.edited, edited(ch.collections.edited));
+    html += section(T.cRemoved, ch.collections.removed, names(ch.collections.removed));
+    html += section(T.order, ch.order, `<p class="ch-names">${ch.order.map(esc).join(', ')}</p>`);
+    html += section(T.settings, ch.settings, `<ul class="ch-edited"><li><div><ul>${ch.settings.map(field).join('')}</ul></div></li></ul>`);
     if (drafts.length) html += `<h3>V konceptech <span class="n">${drafts.length}</span></h3><p class="help">Na GitHub se pošlou, jen když zvolíš <b>Potvrdit ${photosAcc(drafts.length)} a publikovat</b>.</p><div class="ch-grid is-draft">${drafts.map(p => mini(p.id)).join('')}</div>`;
     box.innerHTML = html;
   }
@@ -1070,6 +1080,45 @@
     renderAll();
     document.querySelector(`#thumbs .thumb[data-id="${t.dataset.goto}"]`)?.scrollIntoView({ block: 'center' });
   });
+
+  // ---------- menu ⋯: pull latest, discard my changes ----------
+
+  const gitMenu = open => {
+    $('git-menu').hidden = !open;
+    $('git-menu-btn').setAttribute('aria-expanded', String(open));
+  };
+  $('git-menu-btn').addEventListener('click', e => { e.stopPropagation(); gitMenu($('git-menu').hidden); });
+  document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) gitMenu(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') gitMenu(false); });
+  $('git-menu').addEventListener('click', e => {
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (!act) return;
+    gitMenu(false);
+    if (act === 'pull') syncNow();
+    if (act === 'discard') discardDialog();
+  });
+
+  function discardDialog() {
+    if (!S.git?.repo) return fail(new Error('Složka není propojená s GitHubem.'));
+    modal('Zahodit moje změny?', `
+      <p>Vše, co z této kopie ještě není na GitHubu, se zahodí a galerie se vrátí do stavu, jaký je na GitHubu teď (včetně toho, co mezitím publikovala jiná kopie).
+      <b>Koncepty zůstanou.</b> Zahozený stav se pro jistotu uloží do zálohy v gitu na tomto počítači (na GitHub se neposílá).</p>
+      <div id="p-changes" class="changes"><p class="help">Zjišťuji, co se zahodí…</p></div>`,
+      [['Zrušit', 'ghost'], ['Zahodit změny', 'danger-fill', async () => {
+        saving(true);
+        try {
+          const r = await api('POST', '/api/discard', {});
+          const st = await api('GET', '/api/state');
+          S.data = st.data; S.git = st.git;
+          S.selected.clear();
+          renderAll();
+          toast(r.discarded ? 'Změny zahozeny, galerie je ve stavu z GitHubu.' : 'Nebylo co zahodit.');
+        } catch (e) { fail(e); refreshGitSoon(0); }
+        finally { saving(false); }
+      }]]);
+    $('modal-actions').firstChild.focus(); // the safe choice is the default one
+    loadChanges('discard');
+  }
 
   // ---------- drafts ----------
 

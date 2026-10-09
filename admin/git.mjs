@@ -15,16 +15,17 @@ import { DATA_ROOT } from '../lib/config.mjs';
 import { UserError } from '../lib/gallery.mjs';
 import { mergeGallery } from '../lib/merge.mjs';
 
-let hooks = { buildNow: async () => {}, reload: async () => {} };
-/** buildNow: regenerate docs/ now; reload: re-read data files into memory after git changed them. */
+let hooks = { buildNow: async () => {}, reload: async () => {}, afterDiscard: async () => {} };
+/** buildNow: regenerate docs/ now; reload: re-read data files into memory after git changed them;
+ *  afterDiscard: tidy drafts that refer to what the discard brought back or removed. */
 export function configureGit(h) { hooks = { ...hooks, ...h }; }
 
-export function git(args, { allowFail = false, timeout = 0 } = {}) {
+export function git(args, { allowFail = false, timeout = 0, env = {} } = {}) {
   return new Promise((resolve, reject) => {
     // Do not set GIT_TERMINAL_PROMPT=0: Git Credential Manager treats it as "no interaction"
     // and would suppress the GitHub sign-in window on the first push. GIT_EDITOR=true lets
     // `rebase --continue` finish without opening an editor.
-    const p = spawn('git', args, { cwd: DATA_ROOT, windowsHide: true, env: { ...process.env, GIT_EDITOR: 'true' } });
+    const p = spawn('git', args, { cwd: DATA_ROOT, windowsHide: true, env: { ...process.env, GIT_EDITOR: 'true', ...env } });
     let out = '', err = '', timer;
     if (timeout) timer = setTimeout(() => { err += `\n(přerušeno po ${timeout / 1000} s)`; p.kill(); }, timeout);
     p.stdout.on('data', d => (out += d));
@@ -165,10 +166,50 @@ export function syncPull() {
     if (!st.upstream || !st.behind) return { pulled: 0, status: st };
     if (st.changes || st.ahead) {
       throw new UserError(`Na GitHubu je ${st.behind === 1 ? '1 novější změna' : `${st.behind} novějších změn`} a ty máš nepublikované úpravy. `
-        + 'Klikni na Publikovat: nejdřív stáhne změny z GitHubu, spojí je s tvými a teprve pak odešle.');
+        + 'Klikni na Publikovat: nejdřív stáhne změny z GitHubu, spojí je s tvými a teprve pak odešle. Nebo své změny zahoď (menu ⋯).');
     }
     await fastForward();
     return { pulled: st.behind, status: await gitStatus() };
+  });
+}
+
+/**
+ * Throw away everything not published yet and take GitHub's state (the "discard" in the menu).
+ * Drafts are outside git and stay. Nothing is truly lost: the discarded state (working tree on top
+ * of any unpushed commits) is first committed into a temporary index and kept under
+ * refs/zahozeno/<time>, which no push ever sends (push only sends the branch). Untracked files are
+ * cleaned in docs/ only: a published-but-unpushed photo's images live there, while a broader clean
+ * would delete drafts in a repo without the project's .gitignore.
+ */
+export function discardLocal() {
+  return exclusive(async () => {
+    await hooks.buildNow(); // a build scheduled by the last edit must not land after the reset
+    await fetchRemote();
+    const st = await gitStatus();
+    if (!st.upstream) throw new UserError('Tahle kopie ještě nic nepublikovala, není k čemu se vracet.');
+    if (!st.changes && !st.ahead) return { discarded: false, behind: st.behind, status: st };
+
+    const index = path.join(DATA_ROOT, '.git', 'zahozeno.index');
+    const env = { GIT_INDEX_FILE: index };
+    let backup = '';
+    try {
+      await git(['read-tree', 'HEAD'], { env });
+      await git(['add', '-A'], { env });
+      await git(['rm', '-r', '--cached', '--ignore-unmatch', '--quiet', '--', ...PRIVATE_PATHS], { env, allowFail: true });
+      const tree = (await git(['write-tree'], { env })).out;
+      const commit = (await git(['commit-tree', tree, '-p', 'HEAD', '-m', 'Zahozeno v adminu'])).out;
+      backup = `refs/zahozeno/${new Date().toISOString().replace(/[:.]/g, '-')}`;
+      await git(['update-ref', backup, commit]);
+    } finally { await fsp.rm(index, { force: true }); }
+
+    await git(['reset', '--quiet', '--hard', '@{u}']);
+    await git(['clean', '-fdq', '--', 'docs']);
+    const files = await incomingFiles(backup, 'HEAD');
+    if (needsRestart(files)) sync.restartNeeded = true;
+    await hooks.reload();
+    await hooks.afterDiscard();
+    await hooks.buildNow();
+    return { discarded: true, backup, status: await gitStatus() };
   });
 }
 

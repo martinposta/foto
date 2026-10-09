@@ -1046,6 +1046,53 @@ test('changes: preview shows only what this copy would publish, not drafts or wh
   assert.equal(r.json.count, 0, 'after publishing GitHub has it all');
 });
 
+test('discard: back to GitHub\'s state, drafts stay, the discarded state is kept in a local ref', async () => {
+  const draftDir = id => path.join(dataRoot, 'drafts', 'img', id);
+  let { json: st } = await api('GET', '/api/state');
+  const pub = st.data.photos.filter(p => !p.draft);
+  const [edited, takenBack] = [pub[0], pub[1]];
+  // Nothing unpublished: nothing to discard.
+  let r = await api('POST', '/api/discard', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal(r.json.discarded, false);
+
+  await api('PATCH', `/api/photos/${edited.id}`, { title: 'Zahodit tohle' });
+  const { json: keep } = await api('POST', '/api/upload?name=keep.jpg', undefined, await makeJpeg({ w: 900, h: 600, color: '#118ab2' }));
+  const { json: fresh } = await apiUpload('POST', '/api/upload?name=fresh.jpg', undefined, await makeJpeg({ w: 900, h: 600, color: '#ef476f' }));
+  await api('POST', '/api/photos/unpublish', { ids: [takenBack.id] });
+  const other = await otherClone('other');
+  await otherPublishes(other, d => { d.photos.find(p => p.id === edited.id).location = 'Z jiné kopie'; }, 'other: before discard');
+  await settle();
+  assert.ok(existsSync(docs('img', fresh.photo.id)) && existsSync(draftDir(takenBack.id)));
+
+  r = await api('POST', '/api/discard', {});
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal(r.json.discarded, true);
+  assert.deepEqual([r.json.status.changes, r.json.status.ahead, r.json.status.behind], [0, 0, 0]);
+  ({ json: st } = await api('GET', '/api/state'));
+  const byId = id => st.data.photos.find(p => p.id === id);
+  assert.equal(byId(edited.id).title, edited.title, 'edit discarded');
+  assert.equal(byId(edited.id).location, 'Z jiné kopie', 'and GitHub\'s newer state taken');
+  assert.equal(byId(fresh.photo.id), undefined, 'unpushed published photo gone');
+  assert.ok(!existsSync(docs('img', fresh.photo.id)), 'with its files');
+  assert.ok(byId(takenBack.id) && !byId(takenBack.id).draft, 'taken-back photo published again');
+  assert.ok(!existsSync(draftDir(takenBack.id)), 'its leftover draft copy removed');
+  assert.ok(byId(keep.photo.id)?.draft && existsSync(draftDir(keep.photo.id)), 'drafts stay');
+
+  const ref = git(dataRoot, 'for-each-ref', '--format=%(refname)', 'refs/zahozeno').trim();
+  assert.equal(ref, r.json.backup);
+  assert.match(git(dataRoot, 'show', `${ref}:data/gallery.json`), /Zahodit tohle/, 'discarded state recoverable');
+  assert.doesNotMatch(git(dataRoot, 'ls-tree', '-r', '--name-only', ref), /^drafts\//m, 'no drafts in the backup either');
+  assert.equal(git(tmp, '--git-dir', remote, 'for-each-ref', 'refs/zahozeno').trim(), '', 'never on GitHub');
+
+  // Pull latest when another copy published and nothing is unpublished here.
+  await otherPublishes(other, d => { d.photos.find(p => p.id === edited.id).title = 'Stažený název'; }, 'other: after discard');
+  r = await api('POST', '/api/sync', {});
+  assert.equal(r.json.pulled, 1);
+  ({ json: st } = await api('GET', '/api/state'));
+  assert.equal(titleOn(st.data, edited.id), 'Stažený název');
+});
+
 test('changes (lib): photos, collections, order and settings in the owner\'s terms', () => {
   const ph = (id, extra = {}) => ({ id, title: '', description: '', location: '', takenAt: '', collections: [], ...extra });
   const before = {

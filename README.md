@@ -135,6 +135,7 @@ GitHub je hlavní kopie galerie. Admin se s ním srovnává sám:
 
 - **Při spuštění** stáhne, co mezitím publikovala jiná kopie (třeba admin na serveru), pokud nemáš nepublikované úpravy.
 - **Průběžně** (každých 5 minut a při návratu do okna) se ptá GitHubu. Když je tam něco nového, v horní liště se objeví **↓ Synchronizovat**. Když máš zároveň nepublikované úpravy, uvidíš **↓ … na GitHubu · publikuj**.
+- Menu **⋯** vedle *Publikovat*: **Stáhnout z GitHubu** (když tu nemáš nepublikované změny) a **Zahodit moje změny**, které vrátí galerii do stavu na GitHubu. Předtím ukáže, co se zahodí. Koncepty zůstanou a zahozený stav se uloží do zálohy v gitu na tomhle počítači.
 - **Publikovat** vždycky nejdřív stáhne novější stav z GitHubu a spojí ho s tvými změnami. Úpravy různých polí téže fotky (třeba popis na jedné kopii, místo na druhé) se spojí samy. Jen když obě kopie změní **totéž pole** na něco jiného, publikování se zastaví, nic neodešle a tvoje změny zůstanou. To se vyřeší v Claude Code.
 - **Koncepty se nesynchronizují.** Zůstávají v kopii adminu, kde vznikly.
 - Pokud z GitHubu přijde nový kód adminu, v liště se objeví **Nový kód · restartuj admin** (zavřít a znovu spustit `Galerie.command`).

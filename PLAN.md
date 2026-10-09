@@ -190,6 +190,13 @@ Celý web ukazuje *Náhled webu*. Tady jde o to, co konkrétně se publikování
 - [x] Tlačítka dialogu přilepená dole (dlouhý seznam změn je jinak odsune pod okraj). „Potvrdit 1 fotku“ ve 4. pádě.
 - [x] Testy: unit `diffGallery` (všechny druhy změn, přidání a odebrání fotky není změna pořadí, nic nepublikováno = vše nové), API (koncept se neukáže, po potvrzení ano, změna z jiné kopie se neukáže jako vrácená, po publikování 0). `npm test` 37/37.
 
+### Fáze 7d: Menu ⋯ — stáhnout z GitHubu, zahodit moje změny (požadavek uživatele 2026-10-09)
+- [x] Menu ⋯ vedle *Publikovat*: **↓ Stáhnout z GitHubu** (dosavadní `POST /api/sync`, jen rychlé stažení, s lokálními změnami odmítne a poradí *Publikovat* nebo zahodit) a **Zahodit moje změny…**.
+- [x] `POST /api/discard` (`discardLocal` v `git.mjs`): fetch, `reset --hard @{u}`, `clean` jen v `docs/` (širší clean by v repu bez `.gitignore` smazal koncepty), reload, přestavění. Bere i neodeslané commity a zároveň stáhne, co mezitím publikovala jiná kopie. **Koncepty zůstávají.** `tidyDraftsAfterDiscard`: fotka vrácená do konceptů je po zahození znovu zveřejněná, její kopie v `drafts/img` se smaže. Koncepty ztratí odkazy na kolekce, které zahozením zmizely.
+- [x] Pojistka: zahozený stav (pracovní strom nad neodeslanými commity, bez konceptů) se před resetem uloží přes dočasný index do `refs/zahozeno/<čas>`. Push posílá jen větev, na GitHub to nejde. Obnovení v Claude Code: `git show refs/zahozeno/…:data/gallery.json` apod.
+- [x] Potvrzovací dialog ukazuje seznam toho, co se zahodí (stejný výpočet jako náhled 7c, popisky „vrátí se“, „smažou se“). Výchozí fokus je na *Zrušit*.
+- [x] Test: zahození úpravy, neodeslané fotky (i se soubory), vrácení fotky z konceptů, koncept zůstane, změna z jiné kopie se převezme, záloha existuje, je bez konceptů a není na GitHubu. Pak stažení z GitHubu. `npm test` 38/38. Ověřeno v UI na dočasném klonu.
+
 ### Fáze 7b: Admin na Proxmoxu (Q10: ano, hlavní instance)
 Motivace: víc počítačů a zařízení v domácnosti, uživatel přesouvá aplikace do homelabu. Mac zůstává jako záložní instance (7a) a pro vývoj (Claude Code, `npm test`).
 - **Nasazení:** Docker kontejner (jako generátor faktur) nebo LXC s Node 22 a gitem. Klon repa na trvalém svazku (`data/`, `docs/`, `drafts/`, `.git`). Zahrnout do záloh Proxmoxu, jsou v něm i koncepty.
@@ -388,3 +395,5 @@ Formát: `YYYY-MM-DD — kdo — co`
 - 2026-09-28 — Claude Code (Mac) — Metadata z Capture One ověřena na skutečném exportu (Headline, Description, Location, Country, datum, fotoaparát). Zástupný objektiv „-- mm f/--“ (telefon bez údaje) se ignoruje (test). `.gitignore`: obrázky v kořeni složky (`/*.jpg` apod.) — testovací export s GPS tam ležel neignorovaný a publikování by ho poslalo do veřejného repa. Soubor na přání uživatele smazán.
 - 2026-10-09 — uživatel — Chce před publikováním vidět jen změny (nové fotky, upravené popisky), sloučit s tlačítkem *Publikovat*. Na Windows selhal `git push`: „Invalid username or token. Password authentication is not supported“.
 - 2026-10-09 — Claude Code (Mac) — **Fáze 7c hotová** (náhled změn v dialogu *Publikovat*), viz fáze 7c. Ověřeno v UI na dočasném klonu (upravený popis a místo, nový název, fotka vrácená do konceptů, zrušená ★ kolekce). Windows: git se ptal na jméno a heslo místo přihlášení v prohlížeči, GitHub hesla v gitu nepřijímá. Postup pro uživatele: smazat uložené `git:https://github.com` ve Správci pověření, `credential.helper manager`, push znovu (otevře se prohlížeč).
+- 2026-10-09 — uživatel — Chce v menu tlačítka *pull latest* a *discard my changes*.
+- 2026-10-09 — Claude Code (Mac) — **Fáze 7d hotová** (menu ⋯: stáhnout z GitHubu, zahodit moje změny se zálohou v `refs/zahozeno/`), viz fáze 7d.
