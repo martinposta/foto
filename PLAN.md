@@ -402,3 +402,4 @@ Formát: `YYYY-MM-DD — kdo — co`
 - 2026-10-09 — uživatel — Windows: pořád „Nepublikované změny“, `git status`: `data/gallery.json`, `docs/CNAME`, `docs/assets/fonts/OFL.txt`.
 - 2026-10-09 — Claude Code (Mac) — Druhý projev téhož: tyhle soubory pravidla `eol=lf` nepokryla, Windows je stáhl s CRLF a admin je zapsal zpět s LF. Git u souboru se změněnou velikostí hlásí změnu bez porovnání obsahu. Reprodukováno na Macu (`core.eol=crlf`, přesně tytéž 3 soubory). Oprava: `data/** -text` a `docs/** -text` v `.gitattributes` (soubory zapisované adminem bez převodu, v repu jsou vždy LF). Ověřeno simulací: čerstvý windowsový klon i stávající kopie po *Zahodit moje změny* skončí bez změn.
 
+- 2026-10-09 — uživatel — Windows funguje: po opravě konců řádků „Vše publikováno“.
