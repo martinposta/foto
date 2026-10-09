@@ -3,6 +3,14 @@
 *.cmd     text eol=crlf
 *.command text eol=lf
 *.sh      text eol=lf
+# The public site's sources and output: LF everywhere, so every admin copy generates the same docs/.
+site/**/*.js   text eol=lf
+site/**/*.css  text eol=lf
+site/**/*.html text eol=lf
+docs/**/*.html text eol=lf
+docs/**/*.js   text eol=lf
+docs/**/*.css  text eol=lf
+docs/**/*.json text eol=lf
 *.webp binary
 *.jpg  binary
 *.png  binary

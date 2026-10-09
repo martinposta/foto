@@ -18,6 +18,7 @@ import { readMetadata, targetWidths } from '../lib/images.mjs';
 import { orderedPhotos, reorder } from '../lib/order.mjs';
 import { mergeGallery } from '../lib/merge.mjs';
 import { diffGallery } from '../lib/changes.mjs';
+import { lf } from '../lib/build.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 4399;
@@ -1091,6 +1092,15 @@ test('discard: back to GitHub\'s state, drafts stay, the discarded state is kept
   assert.equal(r.json.pulled, 1);
   ({ json: st } = await api('GET', '/api/state'));
   assert.equal(titleOn(st.data, edited.id), 'Stažený název');
+});
+
+test('build: line endings of the site sources do not change the output (Windows checkout)', async () => {
+  assert.equal(lf('a\r\nb\r\n'), 'a\nb\n');
+  // Every generated page carries the asset version: rebuilding must leave docs/ untouched.
+  const before = git(dataRoot, 'status', '--porcelain', '--', 'docs');
+  await api('PATCH', '/api/settings', {});
+  await settle();
+  assert.equal(git(dataRoot, 'status', '--porcelain', '--', 'docs'), before);
 });
 
 test('changes (lib): photos, collections, order and settings in the owner\'s terms', () => {
