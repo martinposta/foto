@@ -3,14 +3,17 @@
 *.cmd     text eol=crlf
 *.command text eol=lf
 *.sh      text eol=lf
-# The public site's sources and output: LF everywhere, so every admin copy generates the same docs/.
+# Site sources: LF everywhere (the build also normalizes them, lib/build.mjs lf()).
 site/**/*.js   text eol=lf
 site/**/*.css  text eol=lf
 site/**/*.html text eol=lf
-docs/**/*.html text eol=lf
-docs/**/*.js   text eol=lf
-docs/**/*.css  text eol=lf
-docs/**/*.json text eol=lf
+site/**/*.txt  text eol=lf
+# Written by the admin, not by people: no conversion at all, the working tree is byte for byte the
+# repo (always LF). With text=auto Windows checked these out as CRLF, the admin wrote them back as
+# LF, and git reports a file whose size changed as modified without comparing content: permanent
+# "Nepublikované změny" for data/gallery.json, docs/CNAME, docs/assets/fonts/OFL.txt.
+data/**        -text
+docs/**        -text
 *.webp binary
 *.jpg  binary
 *.png  binary
