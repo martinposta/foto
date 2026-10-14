@@ -136,8 +136,15 @@
     ].filter(Boolean);
     els.chips.innerHTML = parts.join(sep);
     updateChipEdges();
-    const year = new Date().getFullYear();
-    els.foot.innerHTML = `© ${year} ${esc(s.name)}${s.links[0] ? ` · <a href="${esc(s.links[0].url)}">${esc(s.links[0].label || s.links[0].url)}</a>` : ''}`;
+    // Rights notice: the copyright setting (the same text the photo files carry), and where to ask
+    // for permission. The address is put together here only, like the profile's Email link (D26).
+    const notice = s.copyright || `© ${new Date().getFullYear()} ${s.name}`;
+    els.foot.innerHTML = `${esc(notice)}${s.contact ? ` Usage requests: <a data-mail rel="nofollow"></a>` : ''}`;
+    const footMail = els.foot.querySelector('[data-mail]');
+    if (footMail) {
+      footMail.href = 'mailto:' + s.contact.u + '@' + s.contact.d;
+      footMail.textContent = s.contact.u + '@' + s.contact.d;
+    }
   }
 
   // The chip row with a mouse (touch just swipes): arrows at the ends that still hide chips,

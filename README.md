@@ -225,3 +225,16 @@ foto-galerie/
 - **Mac: publikování selže s `could not read Username` / `Authentication failed`**: git nemá přihlášení ke GitHubu. Spusť `gh auth login` (fáze 2, bod 3) a publikuj znovu.
 - **Web ukazuje 404**: zkontroluj v **Settings → Pages** větev `main` a složku `/docs` a počkej 1–2 minuty.
 - **Sdílený odkaz nemá obrázek**: vyplň *Veřejná adresa galerie* v nastavení a publikuj. Messenger si náhledy cachuje, u už sdílených odkazů může chvíli trvat, než se obnoví.
+
+## License
+
+Copyright © 2026 Martin Porter. All rights reserved.
+
+No license is granted to copy, modify, distribute, or use any part of this repository,
+including all photographs. For any usage requests (including commercial use), contact:
+foto [at] martinposta.com
+
+Third-party components keep their own licenses, see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+Totéž stojí v patičce webu („Usage requests“ s adresou složenou až v prohlížeči) a v každé fotce na webu: EXIF *Artist* a *Copyright*, XMP *dc:creator*, *dc:rights*, *xmpRights:Marked*, *UsageTerms* a *WebStatement*. Text bere admin z **Profil a nastavení → Copyright** a kontaktního e-mailu. Po jejich změně tlačítko **Použít jméno, copyright a kontakt i u nahraných fotek** přepíše už nahrané fotky bez nové komprese.
+

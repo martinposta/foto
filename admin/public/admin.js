@@ -641,10 +641,10 @@
         </div></div>
       <div class="field"><label for="s-name">Jméno</label><input type="text" id="s-name" value="${esc(s.name)}"></div>
       <div class="field"><label for="s-bio">Krátký popis</label><textarea id="s-bio">${esc(s.bio)}</textarea></div>
-      <div class="field"><label for="s-copyright">Copyright v souborech</label>
-        <input type="text" id="s-copyright" value="${esc(s.copyright)}" placeholder="© Martin Pošta">
-        <div class="hint">Zapíše se do každé fotky na webu spolu se jménem (autor), takže kdo si fotku stáhne, uvidí, čí je. Nic jiného z originálu se nezapisuje. Platí pro nově nahrané fotky. Formát EXIF neumí diakritiku, v souboru bude „Posta“ a „(C)“. Prázdné pole = nezapisovat nic.</div>
-        ${S.data.photos.length ? `<button class="btn small" id="s-rewrite" style="margin-top:8px">Použít jméno a copyright i u nahraných fotek (${S.data.photos.length})</button>` : ''}</div>
+      <div class="field"><label for="s-copyright">Copyright</label>
+        <input type="text" id="s-copyright" value="${esc(s.copyright)}" placeholder="© 2026 Martin Porter. All rights reserved.">
+        <div class="hint">Zapíše se do každé fotky na webu spolu se jménem (autor) a kontaktním e-mailem (EXIF i XMP, kde je i příznak „chráněno autorským právem“), takže kdo si fotku stáhne, uvidí, čí je a koho se zeptat. Nic jiného z originálu se nezapisuje. Stejný text je v patičce webu. Platí pro nově nahrané fotky. EXIF neumí diakritiku, tam bude „(C)“ místo „©“. Prázdné pole = nezapisovat nic.</div>
+        ${S.data.photos.length ? `<button class="btn small" id="s-rewrite" style="margin-top:8px">Použít jméno, copyright a kontakt i u nahraných fotek (${S.data.photos.length})</button>` : ''}</div>
       <div class="field"><div class="label">Odkazy (text · adresa)</div>
         <div id="s-links">${links.map(l => linkRow(l)).join('')}</div>
         <button class="btn small ghost" id="s-addlink">+ odkaz</button></div>
@@ -675,7 +675,7 @@
     $('s-rewrite')?.addEventListener('click', () => {
       const mb = S.data.photos.reduce((a, p) => a + (p.bytes || 0), 0) / 1e6;
       modal('Přepsat autora a copyright u nahraných fotek?',
-        `<p>Do souborů všech ${photosLabel(S.data.photos.length)} na webu se zapíše autor <b>${esc(S.data.settings.name)}</b> a copyright <b>${esc(S.data.settings.copyright || '(nic)')}</b>. Obrázky se znovu nekomprimují, kvalita zůstane stejná.</p>
+        `<p>Do souborů všech ${photosLabel(S.data.photos.length)} na webu se zapíše autor <b>${esc(S.data.settings.name)}</b>, copyright <b>${esc(S.data.settings.copyright || '(nic)')}</b> a kontakt pro žádosti o použití. Obrázky se znovu nekomprimují, kvalita zůstane stejná. Soubory, kde už to tak je, zůstanou beze změny.</p>
          <p class="hint">Git si pamatuje každou verzi souboru, takže po publikování se repozitář zvětší asi o ${mb.toFixed(0)} MB. Nedělej to proto zbytečně často.</p>`,
         [['Zrušit', 'ghost'], ['Přepsat', 'primary', async () => {
           saving(true);

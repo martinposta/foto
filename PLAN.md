@@ -46,6 +46,7 @@ Jednoduchý, pěkně prezentovatelný odkaz na osobní fotky, který jde poslat 
 | D9 | Minimum závislostí (`sharp`, `exifr`), žádný framework, žádný build krok, žádné CDN. Písmo je uložené přímo ve webu (D16). **Jediná vědomá výjimka:** skript Cloudflare Web Analytics (D18). | Preference uživatele |
 | D10 | Repo je **veřejné** (GitHub Free). Do galerie nepatří nic soukromého. | Podmínka Pages zdarma |
 | D11 | Do webových kopií se cíleně zapisuje **jen `Artist` a `Copyright`** (EXIF IFD0). Nic dalšího: žádné sériové číslo, software ani nastavení vyvolání. | Kdo si fotku stáhne, vidí autora. Nic dalšího neprozradí. |
+| D28 | **All rights reserved** (2026-10-14). `LICENSE` a sekce *License* v README: žádná licence, žádosti o použití na `foto [at] martinposta.com`. Patička webu = text nastavení *Copyright* + „Usage requests:“ s adresou složenou v prohlížeči. K EXIF z D11 přibylo vlastní XMP (`dc:creator`, `dc:rights`, `xmpRights:Marked=True`, `UsageTerms`, `WebStatement`). Jméno **Martin Porter**, ne skutečné. | Komerční a jiné použití jen po domluvě. Kdo fotku stáhne, vidí v ní práva i koho se zeptat. Adresa nikde celá v souborech (D26). |
 | D12 | **GPS se nikdy nepublikuje**, ani v souborech, ani v `data.json`, ani na mapě. Poloha jde na web jen přes ručně zadané pole *Místo* v přesnosti, kterou zvolí uživatel (třeba „Šumava“). Barevný profil se převádí do sRGB. | Fotka z domu nebo chalupy by prozradila adresu. Z historie gitu nejde vzít zpět. |
 | D13 | Webové verze zůstávají **WebP q82** (rozhodnuto 2026-09-26 po porovnání s q90 a AVIF na vlastních fotkách). | Rozdíl je vidět jen při zvětšení, ~950 fotek do 1 GB |
 | D14 | **Kolekce se řadí abecedně** (české řazení, čísla podle hodnoty) v adminu i na webu, doplněno o ★ (D15) a skupiny (D20). Ruční řazení kolekcí (↑/↓) zrušeno. | Přehlednost, nic se nemusí udržovat |
@@ -196,6 +197,13 @@ Celý web ukazuje *Náhled webu*. Tady jde o to, co konkrétně se publikování
 - [x] Pojistka: zahozený stav (pracovní strom nad neodeslanými commity, bez konceptů) se před resetem uloží přes dočasný index do `refs/zahozeno/<čas>`. Push posílá jen větev, na GitHub to nejde. Obnovení v Claude Code: `git show refs/zahozeno/…:data/gallery.json` apod.
 - [x] Potvrzovací dialog ukazuje seznam toho, co se zahodí (stejný výpočet jako náhled 7c, popisky „vrátí se“, „smažou se“). Výchozí fokus je na *Zrušit*.
 - [x] Test: zahození úpravy, neodeslané fotky (i se soubory), vrácení fotky z konceptů, koncept zůstane, změna z jiné kopie se převezme, záloha existuje, je bez konceptů a není na GitHubu. Pak stažení z GitHubu. `npm test` 38/38. Ověřeno v UI na dočasném klonu.
+
+### Fáze 8: Autorská práva (D28, požadavek uživatele 2026-10-14)
+- [x] `LICENSE`, sekce *License* v README, `THIRD-PARTY-NOTICES.md` (Inter 4.001 OFL-1.1 na webu; sharp, libvips LGPL-3.0+, exifr jen v lokálním adminu).
+- [x] Patička webu: `settings.copyright` (nově v `data.json`) + „Usage requests:“ s adresou složenou v `app.js`. Bez kontaktu jen copyright.
+- [x] Metadata: `authorXmp()` v `images.mjs`, zapisuje se při zpracování (`withXmp` nahradí XMP originálu) a bezztrátovým přepisem u nahraných fotek (WebP chunk `XMP `, JPEG APP1). Přepis přeskočí soubory, kde už je vše správně. Ověřeno: pixely beze změny, nic z XMP originálu, opakovaný přepis 0 souborů.
+- [x] Místo exiftoolu ze zadání: v repu jsou jen webové kopie (WebP, `-ext jpg` by zasáhl jen `og.jpg`) a admin by úpravu exiftoolem přepsal. Build metadata nemaže, zapisuje cíleně jen autora a práva (D11).
+- [ ] **Na uživateli po schválení:** v adminu nastavit *Copyright* na „© 2026 Martin Porter. All rights reserved.“, kliknout *Použít jméno, copyright a kontakt i u nahraných fotek* (repo jednorázově +~94 MB) a publikovat.
 
 ### Fáze 7b: Admin na Proxmoxu (Q10: ano, hlavní instance)
 Motivace: víc počítačů a zařízení v domácnosti, uživatel přesouvá aplikace do homelabu. Mac zůstává jako záložní instance (7a) a pro vývoj (Claude Code, `npm test`).
@@ -403,3 +411,5 @@ Formát: `YYYY-MM-DD — kdo — co`
 - 2026-10-09 — Claude Code (Mac) — Druhý projev téhož: tyhle soubory pravidla `eol=lf` nepokryla, Windows je stáhl s CRLF a admin je zapsal zpět s LF. Git u souboru se změněnou velikostí hlásí změnu bez porovnání obsahu. Reprodukováno na Macu (`core.eol=crlf`, přesně tytéž 3 soubory). Oprava: `data/** -text` a `docs/** -text` v `.gitattributes` (soubory zapisované adminem bez převodu, v repu jsou vždy LF). Ověřeno simulací: čerstvý windowsový klon i stávající kopie po *Zahodit moje změny* skončí bez změn.
 
 - 2026-10-09 — uživatel — Windows funguje: po opravě konců řádků „Vše publikováno“.
+- 2026-10-14 — uživatel — Zadání: autorská práva (LICENSE, README, patička, metadata, third-party). Rozhodnuto: jméno Martin Porter, e-mail foto [at] martinposta.com chráněně, metadata ve vlastním zpracování místo exiftoolu.
+- 2026-10-14 — Claude Code (Mac) — Fáze 8 připravena, necommitováno (čeká na schválení). Opravena i chyba bezztrátového přepisu: soubor s rozlišením z originálu se přepsal i beze změny autora. `npm test` 39/39.

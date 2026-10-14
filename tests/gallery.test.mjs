@@ -152,10 +152,15 @@ test('upload: metadata is read, derivatives are written, metadata is stripped', 
   assert.equal((await sharp(docs('img', photoA.id, `2400.${photoA.format}`)).metadata()).width, 2400);
   assert.equal(photoA.exif.camera, 'Fujifilm X-T5', 'camera is read from the original before stripping');
 
-  // D11: every web copy carries exactly author + copyright, nothing from the original (D5, D12).
+  // D11: every web copy carries exactly author + copyright (EXIF, and XMP with the rights block),
+  // nothing from the original (D5, D12): its XMP held the title and description.
   for (const f of [...photoA.widths.map(w => `${w}.${photoA.format}`), 'og.jpg']) {
     const { exif, xmp } = await publishedExif(docs('img', photoA.id, f));
-    assert.equal(xmp, undefined, `${f}: XMP must not be published`);
+    const x = xmp?.toString('utf8') || '';
+    assert.match(x, /<dc:creator><rdf:Seq><rdf:li>Martin Pošta<\/rdf:li>/, `${f}: XMP creator, UTF-8 kept`);
+    assert.match(x, /<dc:rights>.*© Martin Pošta.*<\/dc:rights>/, `${f}: XMP rights`);
+    assert.match(x, /<xmpRights:Marked>True<\/xmpRights:Marked>/, `${f}: marked as rights-managed`);
+    assert.doesNotMatch(x, /Šumava|Mlha|Vltav/, `${f}: nothing of the original's XMP`);
     assert.ok(exif, `${f}: author EXIF missing`);
     assert.equal(exif.Artist, 'Martin Posta', `${f}: Artist (ASCII-transliterated settings.name)`);
     assert.equal(exif.Copyright, '(C) Martin Posta', `${f}: Copyright`);
@@ -447,16 +452,33 @@ test('rewrite-author: new name/copyright reach existing files without re-encodin
     assert.equal(exif.Artist, 'Martin Porter', f);
     assert.equal(exif.Copyright, '(C) Martin Porter', f);
     for (const k of FORBIDDEN_EXIF) assert.equal(exif[k], undefined, `${f}: ${k}`);
-    assert.equal(xmp, undefined);
+    assert.match(xmp.toString(), /<rdf:li>Martin Porter<\/rdf:li>.*© Martin Porter/s, `${f}: XMP follows`);
     assert.equal(await pixels(f), before[f], `${f}: image data must be unchanged`);
   }
   r = await api('POST', '/api/photos/rewrite-author', {});
   assert.equal(r.json.files, 0, 'second run changes nothing');
 
+  // The contact goes into the XMP usage terms, in the "[at]" form like everywhere public (D26).
+  await api('PATCH', '/api/settings', { contactEmail: 'foto@example.org' });
+  r = await api('POST', '/api/photos/rewrite-author', {});
+  assert.ok(r.json.files >= files.length);
+  for (const f of files) {
+    const x = (await sharp(docs('img', p.id, f)).metadata()).xmp.toString();
+    assert.match(x, /<xmpRights:UsageTerms>.*foto \[at\] example\.org.*<\/xmpRights:UsageTerms>/s, f);
+    assert.doesNotMatch(x, /foto@example\.org/, `${f}: never the whole address`);
+    assert.equal(await pixels(f), before[f], `${f}: still the same image data`);
+  }
+  await api('PATCH', '/api/settings', { contactEmail: '' });
+  r = await api('POST', '/api/photos/rewrite-author', {});
+  assert.doesNotMatch((await sharp(docs('img', p.id, files[0])).metadata()).xmp.toString(), /UsageTerms/);
+
   // Empty copyright removes EXIF entirely; setting it again adds it back (also to a simple WebP).
   await api('PATCH', '/api/settings', { copyright: '' });
   await api('POST', '/api/photos/rewrite-author', {});
-  for (const f of files) assert.equal((await sharp(docs('img', p.id, f)).metadata()).exif, undefined, f);
+  for (const f of files) {
+    const m = await sharp(docs('img', p.id, f)).metadata();
+    assert.deepEqual([m.exif, m.xmp], [undefined, undefined], f);
+  }
   const { json: bare } = await apiUpload('POST', '/api/upload?name=bare.jpg', undefined, await makeJpeg({ w: 700, h: 500, color: '#2b2d42' }));
   await api('PATCH', '/api/settings', { name: 'Martin Pošta', copyright: '© Martin Pošta' });
   await api('POST', '/api/photos/rewrite-author', {});
